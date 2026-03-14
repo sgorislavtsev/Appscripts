@@ -555,6 +555,95 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
+/* ═══════════════════════════════════════
+   OVERVIEW TOOLBAR
+═══════════════════════════════════════ */
+.overview-toolbar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 14px; padding: 10px 14px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+.status-tabs { display: flex; gap: 3px; flex-wrap: wrap; }
+.status-tab {
+  padding: 4px 11px; border-radius: 5px; border: 1px solid var(--border);
+  background: transparent; color: var(--text2); font-size: .72rem;
+  font-weight: 600; cursor: pointer; transition: all .12s; white-space: nowrap;
+  font-family: var(--sans);
+}
+.status-tab:hover { border-color: var(--border2); color: var(--text); background: var(--bg4); }
+.status-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.status-tab.t-ok.active    { background: rgba(0,214,143,.2);  color: var(--green);  border-color: var(--green); }
+.status-tab.t-over.active  { background: rgba(255,71,87,.2);  color: var(--red);    border-color: var(--red); }
+.status-tab.t-under.active { background: rgba(245,166,35,.2); color: var(--amber);  border-color: var(--amber); }
+.status-tab.t-stale.active { background: rgba(74,158,255,.15);color: var(--blue);   border-color: var(--blue); }
+.status-tab.t-miss.active  { background: rgba(181,135,255,.15);color:var(--purple); border-color: var(--purple); }
+.overview-search {
+  flex: 1; min-width: 160px; max-width: 260px;
+  padding: 5px 10px; border-radius: 6px;
+  background: var(--bg4); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--sans); font-size: .78rem;
+}
+.overview-search:focus { outline: none; border-color: var(--accent); }
+.overview-search::placeholder { color: var(--text3); }
+.overview-count {
+  margin-left: auto; font-size: .7rem; color: var(--text3);
+  font-family: var(--mono); white-space: nowrap;
+}
+
+/* SORTABLE TABLE HEADERS */
+.sortable { cursor: pointer; user-select: none; }
+.sortable:hover { color: var(--text); }
+.sort-icon { font-size: .6rem; margin-left: 3px; opacity: .5; }
+.sortable.sorted-asc .sort-icon::after { content: ' ▲'; opacity: 1; }
+.sortable.sorted-desc .sort-icon::after { content: ' ▼'; opacity: 1; }
+.sortable .sort-icon::after { content: ' ⇅'; }
+
+/* MISSING STORES SECTION */
+.missing-section-hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 7px;
+  background: rgba(181,135,255,.06); border: 1px solid rgba(181,135,255,.2);
+  margin-bottom: 8px; margin-top: 16px; cursor: pointer;
+  transition: border-color .15s;
+}
+.missing-section-hdr:hover { border-color: rgba(181,135,255,.4); }
+.missing-chevron { color: var(--purple); font-size: .75rem; transition: transform .2s; margin-left: 4px; }
+.missing-section-hdr.collapsed .missing-chevron { transform: rotate(-90deg); }
+
+/* SIDEBAR SEARCH */
+.sidebar-search {
+  width: 100%; padding: 5px 8px; border-radius: 5px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-family: var(--mono); font-size: .72rem;
+  margin-bottom: 6px;
+}
+.sidebar-search:focus { outline: none; border-color: var(--accent); color: var(--text); }
+.sidebar-search::placeholder { color: var(--text3); }
+
+/* AUTO-REFRESH TIMER */
+.refresh-timer {
+  font-size: .62rem; color: var(--text3); font-family: var(--mono);
+  padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border);
+  cursor: pointer; transition: border-color .12s;
+}
+.refresh-timer:hover { border-color: var(--border2); color: var(--text2); }
+.refresh-timer.ticking { color: var(--green); border-color: rgba(0,214,143,.3); }
+
+/* WEEK RANGE BADGE */
+.week-range-badge {
+  padding: 2px 8px; border-radius: 4px;
+  background: rgba(74,158,255,.1); color: var(--blue);
+  border: 1px solid rgba(74,158,255,.2); font-size: .7rem;
+  font-family: var(--mono); font-weight: 500; white-space: nowrap;
+}
+
+/* ENHANCED KPI */
+.kpi-trend { font-size: .65rem; font-family: var(--mono); margin-top: 3px; }
+.kpi-trend.up   { color: var(--green); }
+.kpi-trend.down { color: var(--red); }
+.kpi-trend.flat { color: var(--text3); }
+
 /* EMPTY STATE */
 .empty { text-align: center; padding: 48px 20px; color: var(--text2); }
 .empty-icon { font-size: 2rem; margin-bottom: 10px; }
@@ -609,6 +698,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <div class="tb-refresh-wrap">
         <button class="tb-btn" onclick="refresh()">⟳ Refresh</button>
         <span class="tb-refresh-ts" id="refreshTs"></span>
+        <span class="refresh-timer" id="autoRefreshTimer" onclick="toggleAutoRefresh()" title="Auto-refresh — click to enable">—</span>
       </div>
       <button class="tb-btn" onclick="exportCSV()">↓ Export</button>
       <button class="tb-btn primary" onclick="saveDefaultView()">⭐ Save View</button>
@@ -670,6 +760,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
       <div class="sidebar-sep"></div>
       <div style="padding:0 10px 6px;font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)">Stores</div>
+      <div style="padding:0 10px 4px">
+        <input class="sidebar-search" id="sidebarSearch" type="text" placeholder="Search store…" oninput="renderSidebarStores()"/>
+      </div>
       <div class="sidebar-scroll" id="sidebarStores"></div>
     </div>
 
@@ -690,9 +783,26 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <div class="pane active" id="pane-overview">
         <div class="page-hdr">
           <div class="page-title">Overview<span id="overviewLabel"></span></div>
+          <div class="page-actions">
+            <span id="weekRangeBadge" class="week-range-badge" style="display:none"></span>
+          </div>
         </div>
         <div id="submitProgressBar"></div>
         <div class="kpi-strip" id="kpiStrip"></div>
+        <!-- Overview toolbar: status tabs + search -->
+        <div class="overview-toolbar" id="overviewToolbar" style="display:none">
+          <div class="status-tabs" id="statusTabs">
+            <button class="status-tab active" data-tab="all"   onclick="setStatusTab('all')">All</button>
+            <button class="status-tab t-ok"   data-tab="ok"    onclick="setStatusTab('ok')">✓ OK</button>
+            <button class="status-tab t-over" data-tab="over"  onclick="setStatusTab('over')">↑ Over</button>
+            <button class="status-tab t-under"data-tab="under" onclick="setStatusTab('under')">↓ Under</button>
+            <button class="status-tab t-stale"data-tab="stale" onclick="setStatusTab('stale')">⚠ Stale</button>
+            <button class="status-tab t-miss" data-tab="missing" onclick="setStatusTab('missing')">✗ Missing</button>
+          </div>
+          <input class="overview-search" id="overviewSearch" type="text"
+            placeholder="Search stores…" oninput="renderStoreGroups()"/>
+          <span class="overview-count" id="overviewCount"></span>
+        </div>
         <div id="storeGroups"></div>
       </div>
 
@@ -862,6 +972,12 @@ const S = {
   charts: {},
   lastLoaded: null,
   prevWeekStores: {}, // storeId → totalHours for prior week (for Δ column)
+  statusTab: 'all',   // active status filter tab
+  sortCol: null,      // current sort column key
+  sortDir: 'asc',     // 'asc' | 'desc'
+  autoRefresh: false, // auto-refresh enabled
+  _arTimer: null,     // auto-refresh countdown interval
+  _arNext: 0,         // next refresh timestamp
   thresholds: {
     minHours: 160, maxHours: 320,
     warnUtilHigh: 85, critUtilHigh: 100,
@@ -906,11 +1022,46 @@ async function loadLoginPeople() {
         return a.name.localeCompare(b.name);
       });
   } catch (e) {
-    // Fallback: show an empty list with error hint
+    // getLeadership not implemented yet — will extract from directory after loadData
     _loginPeople = [];
-    document.getElementById('loginStatus').textContent = '⚠ Could not load roster. Check API URL in Settings.';
   }
   document.getElementById('loginDropdown').style.display = 'none';
+}
+
+// Extract unique DMs/GMs/RVPs from the loaded store directory to populate the login list
+function _extractLeadershipFromDirectory() {
+  if (!S.directory.length) return;
+  const map = new Map(); // key → { name, email, role }
+  const roleOrder = { RVP: 0, GM: 1, DM: 2 };
+
+  S.directory.forEach(s => {
+    const add = (name, email, role) => {
+      if (!name) return;
+      const key = email ? email.toLowerCase() : name.toLowerCase();
+      if (!map.has(key)) map.set(key, { name, email: email||'', role });
+    };
+    add(s.rvp,  s.rvpEmail,     'RVP');
+    add(s.gm,   s.gmEmail,      'GM');
+    add(s.dm,   s.dmEmail,      'DM');
+    add(s.manager, s.managerEmail, 'Store Manager');
+  });
+
+  const people = [...map.values()].sort((a,b) => {
+    const ra = roleOrder[a.role] ?? 9;
+    const rb = roleOrder[b.role] ?? 9;
+    if (ra !== rb) return ra - rb;
+    return a.name.localeCompare(b.name);
+  });
+
+  // Merge — don't replace if already loaded from API
+  if (!_loginPeople.length) {
+    _loginPeople = people;
+  } else {
+    people.forEach(p => {
+      const exists = _loginPeople.find(x => x.name === p.name || (p.email && x.email === p.email));
+      if (!exists) _loginPeople.push(p);
+    });
+  }
 }
 
 function initLogin() {
@@ -1150,6 +1301,10 @@ async function loadData() {
       if (dd.leadership && dd.leadership.length) _mergeFreshLeadership(dd.leadership);
     }
 
+    // Populate login people from directory if getLeadership isn't implemented
+    _extractLeadershipFromDirectory();
+    if (!S.user) _resolveSavedLogin();
+
     // Compute prev-week hours for Δ column
     _buildPrevWeekMap();
 
@@ -1222,7 +1377,7 @@ function _updateDeadlineBanner() {
 
   const urgencyColor = daysUntil <= 1 ? 'var(--red)' : daysUntil <= 3 ? 'var(--amber)' : 'var(--text2)';
 
-  banner.innerHTML = `⏰ <strong>${missingCount}</strong> store${missingCount>1?'s':''} have not submitted for week of <strong>${week}</strong> · Deadline in <strong style="color:${urgencyColor}">${daysUntil} day${daysUntil!==1?'s':''}</strong>`;
+  banner.innerHTML = `⏰ <strong>${missingCount}</strong> store${missingCount>1?'s':''} have not submitted for <strong>${_formatWeekRange(week)||week}</strong> · Deadline in <strong style="color:${urgencyColor}">${daysUntil} day${daysUntil!==1?'s':''}</strong>`;
   banner.classList.add('show');
 }
 
@@ -1237,7 +1392,7 @@ function populateFilters() {
   const wf = document.getElementById('filterWeek');
   if (wf) {
     wf.innerHTML = '<option value="">All Weeks</option>' +
-      weeks.map(w => `<option value="${w}">${w}</option>`).join('');
+      weeks.map(w => `<option value="${w}">${_formatWeekRange(w) || w}</option>`).join('');
     const cur = getCurrentWeekSunday();
     if (weeks.includes(cur)) wf.value = cur;
   }
@@ -1338,7 +1493,10 @@ function applyFilters() {
     if (svpSet && !svpSet.has(sid)) return false;
 
     if (region && s.region !== region) return false;
-    if (area   && s.area   !== area)   return false;
+    if (area) {
+      const _gs = S.dirById[sid];
+      if (!_gs || _gs.area !== area) return false;
+    }
     if (week   && s.weekOf !== week)   return false;
     if (storeQ && !sid.startsWith(storeQ)) return false;
     if (rvpE || gmE || dmE) {
@@ -1397,15 +1555,30 @@ function render() {
   renderStoreGroups();
   renderSidebarStores();
   _updateAlertBadge();
+  _updateOverviewLabel();
   _updateDeadlineBanner();
+}
+
+function _updateOverviewLabel() {
+  const el = document.getElementById('overviewLabel');
+  if (!el) return;
+  const week = document.getElementById('filterWeek')?.value;
+  el.textContent = week ? ` · ${_formatWeekRange(week)}` : '';
 }
 
 function _renderTopContext() {
   const ctx = document.getElementById('topContext');
   if (!ctx) return;
   const week = document.getElementById('filterWeek')?.value;
-  const weekLabel = week ? `Week of ${week}` : 'All Weeks';
-  ctx.innerHTML = `<span>${weekLabel}</span> · <span>${S.filtered.length} stores</span>`;
+  const weekLabel = week ? _formatWeekRange(week) : 'All Weeks';
+  const scopedDir = _scopedDirectoryStores();
+  const submittedCount = week
+    ? scopedDir.filter(s => S.stores.some(x=>String(x.storeId)===String(s.id)&&x.weekOf===week)).length
+    : S.filtered.length;
+  const label = week
+    ? `<span class="tb-context-badge">${weekLabel}</span> ${submittedCount}/${scopedDir.length} submitted`
+    : `${S.filtered.length} stores`;
+  ctx.innerHTML = label;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1455,33 +1628,48 @@ function renderKPIs() {
   const scopedDir = _scopedDirectoryStores();
   const submittedIds = new Set(S.stores.filter(s => !week || s.weekOf===week).map(s=>String(s.storeId)));
   const totalDir = scopedDir.length;
-  const missingCount = Math.max(0, totalDir - [...submittedIds].filter(id => scopedDir.some(s=>String(s.id)===id)).length);
+  const missingCount = scopedDir.filter(s => !submittedIds.has(String(s.id))).length;
+
+  // Week-over-week hours delta
+  const prevHrsTotal = Object.values(S.prevWeekStores).reduce((a,v)=>a+v, 0);
+  const hrsDelta = prevHrsTotal > 0 ? hrs - prevHrsTotal : null;
+  const hrsDeltaHTML = hrsDelta !== null
+    ? `<div class="kpi-trend ${hrsDelta>0?'up':hrsDelta<0?'down':'flat'}">${hrsDelta>0?'+':''}${hrsDelta.toFixed(0)}h vs prev week</div>`
+    : '';
+
+  const submitPct = totalDir > 0 ? Math.round(((totalDir-missingCount)/totalDir)*100) : 0;
+  const avgHrs = total > 0 ? Math.round(hrs/total) : 0;
 
   document.getElementById('kpiStrip').innerHTML = `
     <div class="kpi c-red">
-      <div class="kpi-lbl">Stores Loaded</div>
+      <div class="kpi-lbl">Stores</div>
       <div class="kpi-val">${total}</div>
       <div class="kpi-sub">${totalDir} in scope</div>
     </div>
-    <div class="kpi c-amber">
-      <div class="kpi-lbl">Not Submitted</div>
-      <div class="kpi-val" style="color:${missingCount>0?'var(--red)':'var(--green)'}">${missingCount}</div>
-      <div class="kpi-sub">for selected week</div>
+    <div class="kpi ${submitPct<80?'c-red':submitPct<95?'c-amber':'c-green'}">
+      <div class="kpi-lbl">Submitted</div>
+      <div class="kpi-val" style="color:${submitPct<80?'var(--red)':submitPct<95?'var(--amber)':'var(--green)'}">${submitPct}%</div>
+      <div class="kpi-sub">${missingCount} missing</div>
     </div>
     <div class="kpi c-green">
       <div class="kpi-lbl">Headcount</div>
       <div class="kpi-val">${hc.toLocaleString()}</div>
-      <div class="kpi-sub">across ${total} stores</div>
+      <div class="kpi-sub">avg ${total>0?(hc/total).toFixed(1):0}/store</div>
     </div>
     <div class="kpi c-blue">
       <div class="kpi-lbl">Scheduled Hrs</div>
       <div class="kpi-val">${hrs.toLocaleString()}</div>
-      <div class="kpi-sub">${week || 'all weeks'}</div>
+      ${hrsDeltaHTML || `<div class="kpi-sub">${week || 'all weeks'}</div>`}
+    </div>
+    <div class="kpi c-purple">
+      <div class="kpi-lbl">Avg Hrs/Store</div>
+      <div class="kpi-val">${avgHrs}</div>
+      <div class="kpi-sub">across ${total} stores</div>
     </div>
     <div class="kpi ${pct>100?'c-red':pct>85?'c-amber':'c-green'}">
       <div class="kpi-lbl">Budget Util</div>
-      <div class="kpi-val">${pct}%</div>
-      <div class="kpi-sub">${hrs.toLocaleString()} / ${budget.toLocaleString()} hrs</div>
+      <div class="kpi-val">${budget>0?pct+'%':'—'}</div>
+      <div class="kpi-sub">${budget>0?`${hrs.toLocaleString()} / ${budget.toLocaleString()} hrs`:'No budget set'}</div>
     </div>
     <div class="kpi ${flagged>0?'c-red':'c-green'}">
       <div class="kpi-lbl">Flagged</div>
@@ -1492,71 +1680,266 @@ function renderKPIs() {
 }
 
 // ═══════════════════════════════════════════════════════
+//  STATUS TABS
+// ═══════════════════════════════════════════════════════
+function setStatusTab(tab) {
+  S.statusTab = tab;
+  document.querySelectorAll('.status-tab').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === tab);
+  });
+  renderStoreGroups();
+}
+
+function _tabMatches(s) {
+  switch (S.statusTab) {
+    case 'ok':      return !_isStale(s) && !_isOver(s) && !_isUnder(s) && Number(s.totalHours||0) > 0;
+    case 'over':    return _isOver(s);
+    case 'under':   return _isUnder(s);
+    case 'stale':   return _isStale(s);
+    case 'missing': return false; // handled separately
+    default:        return true;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
 //  STORE GROUPS — TABLE FORMAT  (Feature #2: Δ Hrs column)
 // ═══════════════════════════════════════════════════════
 function renderStoreGroups() {
   const container = document.getElementById('storeGroups');
   if (!container) return;
 
-  const byRegion = _groupBy(S.filtered, 'region');
+  // Show/hide toolbar
+  const toolbar = document.getElementById('overviewToolbar');
+  if (toolbar) toolbar.style.display = S.filtered.length || S.directory.length ? '' : 'none';
+
+  const q = (document.getElementById('overviewSearch')?.value || '').toLowerCase().trim();
+
+  // Apply status tab filter
+  let visStores = S.statusTab === 'missing'
+    ? []
+    : S.filtered.filter(s => {
+        if (!_tabMatches(s)) return false;
+        if (!q) return true;
+        const gs = S.dirById[String(s.storeId)] || {};
+        return String(s.storeId).includes(q) ||
+          (s.storeName||'').toLowerCase().includes(q) ||
+          (gs.city||'').toLowerCase().includes(q) ||
+          (gs.manager||'').toLowerCase().includes(q) ||
+          (gs.dm||'').toLowerCase().includes(q);
+      });
+
+  // Apply sort
+  if (S.sortCol) {
+    visStores = [...visStores].sort((a,b) => {
+      const gs_a = S.dirById[String(a.storeId)] || {};
+      const gs_b = S.dirById[String(b.storeId)] || {};
+      let va, vb;
+      switch(S.sortCol) {
+        case 'id':   va=Number(a.storeId); vb=Number(b.storeId); break;
+        case 'hrs':  va=Number(a.totalHours||0); vb=Number(b.totalHours||0); break;
+        case 'hc':   va=Number(a.headcount||0); vb=Number(b.headcount||0); break;
+        case 'util': {
+          const ba=_getBudget(a),bb=_getBudget(b);
+          va=ba>0?Math.round((Number(a.totalHours||0)/ba)*100):0;
+          vb=bb>0?Math.round((Number(b.totalHours||0)/bb)*100):0; break;
+        }
+        case 'budget': va=_getBudget(a); vb=_getBudget(b); break;
+        case 'week': va=a.weekOf||''; vb=b.weekOf||''; break;
+        case 'pushed': va=a.lastPushed||''; vb=b.lastPushed||''; break;
+        case 'mgr': va=(gs_a.manager||'').toLowerCase(); vb=(gs_b.manager||'').toLowerCase(); break;
+        case 'dm':  va=(gs_a.dm||'').toLowerCase(); vb=(gs_b.dm||'').toLowerCase(); break;
+        default: va=Number(a.storeId); vb=Number(b.storeId);
+      }
+      if (va < vb) return S.sortDir === 'asc' ? -1 : 1;
+      if (va > vb) return S.sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
+  // Update count badge
+  const countEl = document.getElementById('overviewCount');
+  if (countEl) countEl.textContent = `${visStores.length} store${visStores.length!==1?'s':''}`;
+
+  // Update week range badge
+  const week = document.getElementById('filterWeek')?.value;
+  const wrBadge = document.getElementById('weekRangeBadge');
+  if (wrBadge) {
+    if (week) {
+      wrBadge.textContent = _formatWeekRange(week);
+      wrBadge.style.display = '';
+    } else {
+      wrBadge.style.display = 'none';
+    }
+  }
+
   let html = '';
 
-  Object.keys(byRegion).sort().forEach(region => {
-    const rStores = byRegion[region];
-    const rHrs = rStores.reduce((a,s)=>a+Number(s.totalHours||0),0);
-    const rHC  = rStores.reduce((a,s)=>a+Number(s.headcount||0),0);
-    const byDistrict = _groupBy(rStores, s => s.district || s.area || 'Unassigned');
-
-    html += `
-      <div class="group-hdr" onclick="toggleGroup(this)">
-        <span style="font-size:.9rem">📍</span>
-        <span class="group-hdr-title">${region || 'Unassigned'}</span>
-        <div class="group-hdr-stats">
-          <span class="group-stat"><strong>${rStores.length}</strong> stores</span>
-          <span class="group-stat"><strong>${rHC}</strong> staff</span>
-          <span class="group-stat"><strong>${rHrs.toLocaleString()}</strong> hrs</span>
-        </div>
-        <span class="group-chevron">▾</span>
-      </div>
-      <div class="group-body">`;
-
-    Object.keys(byDistrict).sort().forEach(district => {
-      const dStores = byDistrict[district];
-      const dHrs = dStores.reduce((a,s)=>a+Number(s.totalHours||0),0);
-      const dHC  = dStores.reduce((a,s)=>a+Number(s.headcount||0),0);
+  if (S.sortCol) {
+    // When sorted, show flat list without regional grouping
+    const tableId = 'sortedTable';
+    html = `
+      <div class="status-table-wrap">
+        <table class="status-table">
+          <thead>${_storeTableHead()}</thead>
+          <tbody>${visStores.map(s=>storeRowHTML(s)).join('')}</tbody>
+        </table>
+      </div>`;
+  } else {
+    // Default: group by region → district
+    const byRegion = _groupBy(visStores, 'region');
+    Object.keys(byRegion).sort().forEach(region => {
+      const rStores = byRegion[region];
+      const rHrs = rStores.reduce((a,s)=>a+Number(s.totalHours||0),0);
+      const rHC  = rStores.reduce((a,s)=>a+Number(s.headcount||0),0);
+      const byDistrict = _groupBy(rStores, s => {
+        const _g = S.dirById[String(s.storeId)] || {};
+        return s.district || _g.area || _g.dm || 'Unassigned';
+      });
 
       html += `
-        <div style="padding:4px 0 4px 12px;margin-bottom:4px">
-          <div style="font-size:.7rem;font-weight:600;color:var(--text2);letter-spacing:.04em;padding:4px 8px;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--border)">
-            <span style="color:var(--text)">📌 ${district}</span>
-            <span>${dStores.length} stores · ${dHC} staff · ${dHrs.toLocaleString()} hrs</span>
+        <div class="group-hdr" onclick="toggleGroup(this)">
+          <span style="font-size:.9rem">📍</span>
+          <span class="group-hdr-title">${region || 'Unassigned'}</span>
+          <div class="group-hdr-stats">
+            <span class="group-stat"><strong>${rStores.length}</strong> stores</span>
+            <span class="group-stat"><strong>${rHC}</strong> staff</span>
+            <span class="group-stat"><strong>${rHrs.toLocaleString()}</strong> hrs</span>
           </div>
+          <span class="group-chevron">▾</span>
         </div>
-        <div class="status-table-wrap" style="margin:0 0 10px 12px">
-          <table class="status-table">
-            <thead><tr>
-              <th style="min-width:170px">Store</th>
-              <th>Status</th>
-              <th>Manager</th>
-              <th>DM</th>
-              <th>Headcount</th>
-              <th>Sched Hrs</th>
-              <th>Δ Hrs</th>
-              <th>Budget</th>
-              <th>Util%</th>
-              <th>Week</th>
-              <th>Synced</th>
-            </tr></thead>
-            <tbody>
-              ${dStores.sort((a,b)=>Number(a.storeId)-Number(b.storeId)).map(s=>storeRowHTML(s)).join('')}
-            </tbody>
-          </table>
-        </div>`;
+        <div class="group-body">`;
+
+      Object.keys(byDistrict).sort().forEach(district => {
+        const dStores = byDistrict[district];
+        const dHrs = dStores.reduce((a,s)=>a+Number(s.totalHours||0),0);
+        const dHC  = dStores.reduce((a,s)=>a+Number(s.headcount||0),0);
+
+        html += `
+          <div style="padding:4px 0 4px 12px;margin-bottom:4px">
+            <div style="font-size:.7rem;font-weight:600;color:var(--text2);letter-spacing:.04em;padding:4px 8px;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--border)">
+              <span style="color:var(--text)">📌 ${district}</span>
+              <span>${dStores.length} stores · ${dHC} staff · ${dHrs.toLocaleString()} hrs</span>
+            </div>
+          </div>
+          <div class="status-table-wrap" style="margin:0 0 10px 12px">
+            <table class="status-table">
+              <thead>${_storeTableHead()}</thead>
+              <tbody>
+                ${dStores.sort((a,b)=>Number(a.storeId)-Number(b.storeId)).map(s=>storeRowHTML(s)).join('')}
+              </tbody>
+            </table>
+          </div>`;
+      });
+      html += `</div>`;
     });
-    html += `</div>`;
-  });
+  }
+
+  // Missing stores section
+  if (S.statusTab === 'all' || S.statusTab === 'missing') {
+    const selectedWeek = document.getElementById('filterWeek')?.value;
+    const submittedIds = new Set(S.stores.filter(s => !selectedWeek || s.weekOf===selectedWeek).map(s=>String(s.storeId)));
+    const scopedDir = _scopedDirectoryStores();
+    let missingStores = scopedDir.filter(s => !submittedIds.has(String(s.id)));
+    if (q) missingStores = missingStores.filter(s =>
+      String(s.id).includes(q) ||
+      (s.name||'').toLowerCase().includes(q) ||
+      (s.city||'').toLowerCase().includes(q) ||
+      (s.manager||'').toLowerCase().includes(q) ||
+      (s.dm||'').toLowerCase().includes(q)
+    );
+
+    if (missingStores.length) {
+      if (S.statusTab === 'missing') {
+        // Update count badge to reflect missing count
+        if (countEl) countEl.textContent = `${missingStores.length} missing`;
+      }
+      html += `
+        <div class="missing-section-hdr" onclick="toggleMissingSection(this)">
+          <span style="font-size:.9rem">📭</span>
+          <span class="group-hdr-title" style="color:var(--purple)">Not Submitted</span>
+          <div class="group-hdr-stats">
+            <span class="group-stat" style="color:var(--purple)"><strong>${missingStores.length}</strong> stores</span>
+            ${selectedWeek ? `<span class="group-stat">for week of <strong>${selectedWeek}</strong></span>` : ''}
+          </div>
+          <span class="missing-chevron">▾</span>
+        </div>
+        <div class="missing-body">
+          <div class="status-table-wrap" style="margin-bottom:10px">
+            <table class="status-table">
+              <thead><tr>
+                <th style="min-width:170px">Store</th>
+                <th>Manager</th><th>DM</th><th>GM</th><th>Region</th><th>Phone</th>
+                <th></th>
+              </tr></thead>
+              <tbody>
+                ${missingStores.sort((a,b)=>Number(a.id)-Number(b.id)).map(s => {
+                  const chaseBtn = (s.managerEmail && selectedWeek)
+                    ? `<button class="btn-chase" onclick="event.stopPropagation();chaseStore('${s.managerEmail}','${s.id}','${(s.name||'').replace(/'/g,"\\'")}','${selectedWeek}')">✉ Chase</button>`
+                    : '';
+                  return `<tr onclick="openDetail('${s.id}')" style="cursor:pointer;opacity:.7">
+                    <td>
+                      <div class="store-id-cell">
+                        <span class="store-id-num" style="color:var(--purple)">${s.id}</span>
+                        <div>
+                          <div style="font-size:.75rem;font-weight:500">${_shortName(s.name)}</div>
+                          <div class="store-city">${s.city||''}, ${s.state||''}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style="font-size:.73rem">${s.manager||'—'}</td>
+                    <td style="font-size:.73rem;color:var(--text2)">${s.dm||'—'}</td>
+                    <td style="font-size:.73rem;color:var(--text2)">${s.gm||'—'}</td>
+                    <td style="font-size:.73rem;color:var(--text3)">${s.region||'—'}</td>
+                    <td style="font-size:.68rem;color:var(--text3);font-family:var(--mono)">${s.phone||'—'}</td>
+                    <td>${chaseBtn}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    }
+  }
 
   container.innerHTML = html || `<div class="empty"><div class="empty-icon">🏪</div><div class="empty-title">No stores match filters</div></div>`;
+}
+
+function toggleMissingSection(hdr) {
+  hdr.classList.toggle('collapsed');
+  const body = hdr.nextElementSibling;
+  if (body) body.style.display = hdr.classList.contains('collapsed') ? 'none' : '';
+}
+
+function _storeTableHead() {
+  const th = (label, col, style='') => {
+    const sorted = S.sortCol === col;
+    const dir = sorted ? (S.sortDir === 'asc' ? 'sorted-asc' : 'sorted-desc') : '';
+    return `<th class="sortable ${dir}" style="${style}" onclick="sortBy('${col}')">${label}<span class="sort-icon"></span></th>`;
+  };
+  return `<tr>
+    ${th('Store','id','min-width:170px')}
+    <th>Status</th>
+    ${th('Manager','mgr')}
+    ${th('DM','dm')}
+    ${th('HC','hc')}
+    ${th('Sched Hrs','hrs')}
+    <th>Δ Hrs</th>
+    ${th('Budget','budget')}
+    ${th('Util%','util')}
+    ${th('Week','week')}
+    ${th('Synced','pushed')}
+  </tr>`;
+}
+
+function sortBy(col) {
+  if (S.sortCol === col) {
+    if (S.sortDir === 'asc') S.sortDir = 'desc';
+    else { S.sortCol = null; S.sortDir = 'asc'; } // third click clears sort
+  } else {
+    S.sortCol = col;
+    S.sortDir = 'asc';
+  }
+  renderStoreGroups();
 }
 
 function storeRowHTML(s) {
@@ -1633,7 +2016,15 @@ function toggleGroup(hdr) {
 function renderSidebarStores() {
   const el = document.getElementById('sidebarStores');
   if (!el) return;
-  el.innerHTML = S.filtered.map(s => {
+  const q = (document.getElementById('sidebarSearch')?.value || '').toLowerCase().trim();
+  const stores = q
+    ? S.filtered.filter(s =>
+        String(s.storeId).includes(q) ||
+        (s.storeName||'').toLowerCase().includes(q) ||
+        ((S.dirById[String(s.storeId)]?.city)||'').toLowerCase().includes(q)
+      )
+    : S.filtered;
+  el.innerHTML = stores.map(s => {
     const color = _isStale(s)?'var(--text3)':_isOver(s)?'var(--red)':_isUnder(s)?'var(--amber)':'var(--green)';
     return `<div class="mini-store" onclick="openDetail('${s.storeId}')">
       <div class="mini-dot" style="background:${color}"></div>
@@ -1641,7 +2032,7 @@ function renderSidebarStores() {
       <span style="font-size:.68rem;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_shortName(s.storeName,12)}</span>
       <span class="mini-hrs">${Number(s.totalHours||0)}h</span>
     </div>`;
-  }).join('');
+  }).join('') || `<div style="padding:8px 6px;font-size:.7rem;color:var(--text3)">No matches</div>`;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1968,7 +2359,8 @@ function _updateAlertBadge() {
 //  STORE DETAIL — with breadcrumb + day chart (Features #5, #6)
 // ═══════════════════════════════════════════════════════
 function openDetail(storeId) {
-  const s = S.stores.find(x=>String(x.storeId)===String(storeId));
+  storeId = String(storeId);
+  const s = S.stores.find(x=>String(x.storeId)===storeId);
   if (!s) {
     // Store in directory but no schedule yet — show info-only panel
     const gs = S.dirById[String(storeId)] || {};
@@ -2141,7 +2533,7 @@ function _contactsHTML(gs) {
 }
 
 function switchDept(storeId, dept) {
-  const s = S.stores.find(x=>x.storeId===storeId);
+  const s = S.stores.find(x=>String(x.storeId)===String(storeId));
   if (!s) return;
   S._detailDept = dept;
   _renderDetail(s, dept);
@@ -2154,7 +2546,7 @@ function closeDetail() {
 //  DOWNLOAD / SEND TO SCHEDULER
 // ═══════════════════════════════════════════════════════
 function downloadJson() {
-  const s = S.stores.find(x=>x.storeId===S._detailStore);
+  const s = S.stores.find(x=>String(x.storeId)===String(S._detailStore));
   if (!s) return;
   const data = s.departments?.length>1 ? {storeId:s.storeId,storeName:s.storeName,departments:s.departments} : s.payload;
   if (!data) return;
@@ -2165,7 +2557,7 @@ function downloadJson() {
 }
 
 async function sendToScheduler() {
-  const s = S.stores.find(x=>x.storeId===S._detailStore);
+  const s = S.stores.find(x=>String(x.storeId)===String(S._detailStore));
   if (!s) return;
   let payload = s.payload;
   if (s.departments?.length>1) {
@@ -2341,9 +2733,12 @@ async function _silentLoadUserSettings(email) {
 //  HELPER UTILITIES
 // ═══════════════════════════════════════════════════════
 function _getBudget(s) {
+  // Prefer explicit weeklyBudget (hours) stored on store record (rolled up from sheet)
+  if (Number(s.weeklyBudget||0) > 0) return Number(s.weeklyBudget);
+  // calcBudget is the sum of (forecastSales*payrollPct/100) per dept, returned by getAllStores
+  if (Number(s.calcBudget||0) > 0) return Math.round(Number(s.calcBudget));
+  // Fallback: compute from the canonical payload directly
   const p = s.payload || {};
-  const direct = Number(s.weeklyBudget || s.budget || 0);
-  if (direct > 0) return direct;
   const calc = (Number(p.forecastSales||0) * Number(p.payrollPct||0)) / 100;
   return Math.round(calc);
 }
@@ -2408,6 +2803,73 @@ function _mergeDeptsForView(viewDepts, isMulti) {
 function getCurrentWeekSunday() {
   const d=new Date(); d.setDate(d.getDate()-d.getDay());
   return d.toISOString().slice(0,10);
+}
+
+// Format a week-start date as "Jan 7 – Jan 13"
+function _formatWeekRange(weekOf) {
+  if (!weekOf) return '';
+  try {
+    const start = new Date(weekOf + 'T00:00:00');
+    const end = new Date(start); end.setDate(end.getDate() + 6);
+    const fmt = d => d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    return `${fmt(start)} – ${fmt(end)}`;
+  } catch(e) { return weekOf; }
+}
+
+// ═══════════════════════════════════════════════════════
+//  KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  // Escape closes overlay
+  if (e.key === 'Escape') {
+    const ov = document.getElementById('detailOverlay');
+    if (ov && ov.classList.contains('open')) { closeDetail(); return; }
+    const ls = document.getElementById('loginScreen');
+    if (ls && ls.style.display !== 'none' && S.user) { ls.style.display = 'none'; return; }
+  }
+  // / focuses overview search
+  if (e.key === '/' && !['INPUT','TEXTAREA'].includes(e.target.tagName)) {
+    e.preventDefault();
+    const el = document.getElementById('overviewSearch');
+    if (el) { el.focus(); el.select(); }
+  }
+  // R refreshes (no modifier, not in input)
+  if (e.key === 'r' && !e.ctrlKey && !e.metaKey && !['INPUT','TEXTAREA'].includes(e.target.tagName)) {
+    refresh();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+//  AUTO-REFRESH
+// ═══════════════════════════════════════════════════════
+const AUTO_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
+
+function toggleAutoRefresh() {
+  S.autoRefresh = !S.autoRefresh;
+  if (S.autoRefresh) {
+    S._arNext = Date.now() + AUTO_REFRESH_MS;
+    if (S._arTimer) clearInterval(S._arTimer);
+    S._arTimer = setInterval(_tickAutoRefresh, 1000);
+    _tickAutoRefresh();
+  } else {
+    if (S._arTimer) { clearInterval(S._arTimer); S._arTimer = null; }
+    const el = document.getElementById('autoRefreshTimer');
+    if (el) { el.textContent = '—'; el.classList.remove('ticking'); el.title = 'Auto-refresh — click to enable'; }
+  }
+}
+
+function _tickAutoRefresh() {
+  const el = document.getElementById('autoRefreshTimer');
+  if (!el || !S.autoRefresh) return;
+  const remaining = Math.max(0, Math.round((S._arNext - Date.now()) / 1000));
+  if (remaining <= 0) {
+    S._arNext = Date.now() + AUTO_REFRESH_MS;
+    refresh();
+  }
+  const m = Math.floor(remaining / 60), s = remaining % 60;
+  el.textContent = `↻ ${m}:${String(s).padStart(2,'0')}`;
+  el.classList.add('ticking');
+  el.title = `Auto-refresh in ${m}m ${s}s — click to disable`;
 }
 function timeAgo(iso) {
   if (!iso) return '';
