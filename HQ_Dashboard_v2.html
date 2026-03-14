@@ -4,38 +4,38 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Parts Authority · HQ Command Center</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 /* ═══════════════════════════════════════
    DESIGN TOKENS
 ═══════════════════════════════════════ */
 :root {
-  --bg:       #080a0f;
-  --bg2:      #0d1018;
-  --bg3:      #121520;
-  --bg4:      #181c28;
-  --bg5:      #1e2235;
-  --border:   rgba(255,255,255,.07);
-  --border2:  rgba(255,255,255,.13);
-  --text:     #e8ecf5;
-  --text2:    #7e8aab;
-  --text3:    #454e6b;
+  --bg:       #0d0f16;
+  --bg2:      #12151e;
+  --bg3:      #181c28;
+  --bg4:      #1e2235;
+  --bg5:      #252942;
+  --border:   rgba(255,255,255,.09);
+  --border2:  rgba(255,255,255,.18);
+  --text:     #eef0f8;
+  --text2:    #9aa5c4;
+  --text3:    #616a8a;
   --accent:   #e0261a;
   --accent2:  #b81e14;
-  --accent-glow: rgba(224,38,26,.18);
-  --green:    #00d68f;
-  --green-dim:#003d28;
-  --amber:    #f5a623;
-  --amber-dim:#3a2800;
-  --red:      #ff4757;
-  --red-dim:  #3a0a0f;
-  --blue:     #4a9eff;
-  --blue-dim: #0a1f3a;
-  --purple:   #b97fff;
+  --accent-glow: rgba(224,38,26,.2);
+  --green:    #10d98a;
+  --green-dim:#0a3320;
+  --amber:    #f6ac2a;
+  --amber-dim:#3a2200;
+  --red:      #f95363;
+  --red-dim:  #3a0a10;
+  --blue:     #5aabff;
+  --blue-dim: #0c2244;
+  --purple:   #c084fc;
   --mono:     'DM Mono', monospace;
   --sans:     'Inter', sans-serif;
-  --display:  'Syne', sans-serif;
+  --display:  'Inter', sans-serif;
   --r:        10px;
   --sidebar:  224px;
 }
@@ -60,8 +60,8 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   box-shadow: 0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04);
 }
 .login-logo {
-  font-family: var(--display); font-size: 1.6rem; font-weight: 800;
-  letter-spacing: -1px; margin-bottom: 6px;
+  font-family: var(--sans); font-size: 1.5rem; font-weight: 800;
+  letter-spacing: -.5px; margin-bottom: 6px;
 }
 .login-logo .red { color: var(--accent); }
 .login-sub { font-size: .8rem; color: var(--text2); margin-bottom: 28px; letter-spacing: .02em; }
@@ -99,8 +99,8 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .btn-login {
   width: 100%; padding: 12px; border-radius: 8px;
   background: var(--accent); color: #fff; border: none;
-  font-family: var(--display); font-size: .9rem; font-weight: 700;
-  cursor: pointer; letter-spacing: .03em; transition: background .15s;
+  font-family: var(--sans); font-size: .9rem; font-weight: 700;
+  cursor: pointer; letter-spacing: .01em; transition: background .15s;
 }
 .btn-login:hover { background: var(--accent2); }
 .btn-login:disabled { opacity: .5; cursor: not-allowed; }
@@ -125,13 +125,13 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
   background: linear-gradient(90deg, var(--accent) 0%, transparent 40%);
 }
-.tb-logo { font-family: var(--display); font-size: 1.05rem; font-weight: 800; letter-spacing: -.5px; white-space: nowrap; }
+.tb-logo { font-family: var(--sans); font-size: 1.05rem; font-weight: 800; letter-spacing: -.4px; white-space: nowrap; }
 .tb-logo .red { color: var(--accent); }
 .tb-logo .dim { color: var(--text3); font-weight: 400; font-size: .8rem; margin-left: 4px; }
 .tb-sep { width: 1px; height: 24px; background: var(--border); margin: 0 16px; }
 .tb-context {
   display: flex; align-items: center; gap: 8px;
-  font-size: .72rem; color: var(--text2); font-family: var(--mono);
+  font-size: .72rem; color: var(--text); font-family: var(--sans);
 }
 .tb-context-badge {
   padding: 2px 8px; border-radius: 4px;
@@ -190,8 +190,8 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 }
 .sidebar-top { padding: 16px 12px 8px; flex-shrink: 0; }
 .sidebar-section-label {
-  font-size: .62rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--text3); padding: 0 8px; margin-bottom: 4px;
+  font-size: .62rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text2); padding: 0 8px; margin-bottom: 4px;
 }
 .nav-item {
   display: flex; align-items: center; gap: 9px;
@@ -199,8 +199,8 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   font-size: .8rem; color: var(--text2); font-weight: 500;
   transition: all .12s; border: 1px solid transparent; margin-bottom: 1px;
 }
-.nav-item:hover { background: var(--bg4); color: var(--text); }
-.nav-item.active { background: var(--accent-glow); border-color: rgba(224,38,26,.25); color: var(--accent); }
+.nav-item:hover { background: var(--bg4); color: var(--text); border-color: var(--border); }
+.nav-item.active { background: var(--accent-glow); border-color: rgba(224,38,26,.35); color: #ff7a70; }
 .nav-icon { font-size: .9rem; width: 18px; text-align: center; }
 .nav-badge {
   margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px;
@@ -212,21 +212,22 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 /* FILTER AREA */
 .filter-area { padding: 0 10px 10px; flex-shrink: 0; }
-.filter-label { font-size: .62rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); padding: 0 2px; margin-bottom: 6px; display: block; }
+.filter-label { font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text2); padding: 0 2px; margin-bottom: 6px; display: block; }
 .filter-sel {
   width: 100%; padding: 6px 10px 6px 10px; border-radius: 6px;
-  background: var(--bg3); border: 1px solid var(--border);
-  color: var(--text2); font-family: var(--sans); font-size: .75rem;
+  background: var(--bg3); border: 1px solid var(--border2);
+  color: var(--text); font-family: var(--sans); font-size: .75rem;
   cursor: pointer; appearance: none; margin-bottom: 5px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23454e6b'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%239aa5c4'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 8px center;
   transition: border-color .15s;
 }
 .filter-sel:focus { outline: none; border-color: var(--accent); color: var(--text); }
+.filter-sel option { background: var(--bg3); color: var(--text); }
 .filter-text {
   width: 100%; padding: 6px 10px; border-radius: 6px;
-  background: var(--bg3); border: 1px solid var(--border);
-  color: var(--text2); font-family: var(--mono); font-size: .72rem;
+  background: var(--bg3); border: 1px solid var(--border2);
+  color: var(--text); font-family: var(--sans); font-size: .75rem;
   margin-bottom: 5px;
 }
 .filter-text:focus { outline: none; border-color: var(--accent); color: var(--text); }
@@ -252,7 +253,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 /* PAGE HEADER */
 .page-hdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; }
-.page-title { font-family: var(--display); font-size: 1.35rem; font-weight: 800; letter-spacing: -.5px; }
+.page-title { font-family: var(--sans); font-size: 1.2rem; font-weight: 700; letter-spacing: -.3px; }
 .page-title span { color: var(--text3); font-weight: 400; font-size: .8rem; margin-left: 8px; letter-spacing: 0; font-family: var(--sans); }
 .page-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
@@ -292,16 +293,16 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .kpi.c-amber::before { background: var(--amber); }
 .kpi.c-blue::before { background: var(--blue); }
 .kpi.c-purple::before { background: var(--purple); }
-.kpi-lbl { font-size: .62rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; }
+.kpi-lbl { font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text2); margin-bottom: 8px; }
 /* KPI values use Inter, not Syne — prevents stretched glyphs */
 .kpi-val { font-family: var(--sans); font-size: 1.9rem; font-weight: 700; line-height: 1; letter-spacing: -.03em; }
-.kpi-sub { font-size: .68rem; color: var(--text2); margin-top: 5px; font-family: var(--mono); }
+.kpi-sub { font-size: .68rem; color: var(--text2); margin-top: 5px; font-family: var(--sans); }
 
 /* ═══════════════════════════════════════
    STATUS TABLE (OVERVIEW)
 ═══════════════════════════════════════ */
 .section-hdr { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.section-title { font-family: var(--display); font-size: .9rem; font-weight: 700; letter-spacing: -.3px; }
+.section-title { font-family: var(--sans); font-size: .88rem; font-weight: 700; letter-spacing: -.1px; }
 .section-pill {
   padding: 2px 8px; border-radius: 4px;
   background: var(--bg4); color: var(--text2);
@@ -318,7 +319,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 }
 .group-hdr:first-child { margin-top: 0; }
 .group-hdr:hover { border-color: var(--border2); }
-.group-hdr-title { font-family: var(--display); font-size: .82rem; font-weight: 700; letter-spacing: -.2px; }
+.group-hdr-title { font-family: var(--sans); font-size: .82rem; font-weight: 700; letter-spacing: -.1px; }
 .group-hdr-stats { margin-left: auto; display: flex; gap: 10px; }
 .group-stat { font-size: .7rem; font-family: var(--mono); color: var(--text2); }
 .group-stat strong { color: var(--text); font-weight: 500; }
@@ -332,14 +333,14 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 }
 .status-table { width: 100%; border-collapse: collapse; }
 .status-table th {
-  font-size: .62rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--text3); padding: 8px 12px; background: var(--bg4);
-  border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap;
+  font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text2); padding: 8px 12px; background: var(--bg4);
+  border-bottom: 1px solid var(--border2); text-align: left; white-space: nowrap;
 }
 .status-table th:not(:first-child) { text-align: right; }
 .status-table td {
-  padding: 7px 12px; border-bottom: 1px solid var(--border);
-  font-size: .78rem; vertical-align: middle;
+  padding: 8px 12px; border-bottom: 1px solid var(--border);
+  font-size: .8rem; vertical-align: middle; color: var(--text);
 }
 .status-table tr:last-child td { border-bottom: none; }
 .status-table tr:hover td { background: var(--bg4); }
@@ -351,11 +352,11 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   display: inline-flex; align-items: center; gap: 4px;
   padding: 2px 7px; border-radius: 4px; font-size: .65rem; font-weight: 600; white-space: nowrap;
 }
-.sp-green  { background: rgba(0,214,143,.1); color: var(--green);  border: 1px solid rgba(0,214,143,.2); }
-.sp-amber  { background: rgba(245,166,35,.1); color: var(--amber);  border: 1px solid rgba(245,166,35,.2); }
-.sp-red    { background: rgba(255,71,87,.1);   color: var(--red);    border: 1px solid rgba(255,71,87,.2); }
-.sp-gray   { background: var(--bg4);            color: var(--text3);  border: 1px solid var(--border); }
-.sp-blue   { background: rgba(74,158,255,.1);  color: var(--blue);   border: 1px solid rgba(74,158,255,.2); }
+.sp-green  { background: rgba(16,217,138,.14); color: #3fefaa;  border: 1px solid rgba(16,217,138,.3); }
+.sp-amber  { background: rgba(246,172,42,.14); color: #fbc44a;  border: 1px solid rgba(246,172,42,.3); }
+.sp-red    { background: rgba(249,83,99,.18);  color: #ff8090;  border: 1px solid rgba(249,83,99,.35); }
+.sp-gray   { background: var(--bg5);            color: var(--text2); border: 1px solid var(--border2); }
+.sp-blue   { background: rgba(90,171,255,.14); color: #7cc4ff;  border: 1px solid rgba(90,171,255,.3); }
 .num-cell { font-family: var(--mono); font-size: .78rem; }
 .hours-mini { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; }
 .hours-bar-mini { width: 48px; height: 4px; background: var(--bg5); border-radius: 2px; overflow: hidden; display: inline-block; vertical-align: middle; }
@@ -395,11 +396,11 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .dir-table col.c-week  { width: 72px; }
 .dir-table col.c-chase { width: 52px; }
 .dir-table th {
-  font-size: .6rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--text3); padding: 7px 10px; background: var(--bg4);
-  border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; overflow: hidden;
+  font-size: .6rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text2); padding: 7px 10px; background: var(--bg4);
+  border-bottom: 1px solid var(--border2); text-align: left; white-space: nowrap; overflow: hidden;
 }
-.dir-table td { padding: 5px 10px; border-bottom: 1px solid var(--border); font-size: .75rem; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dir-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); font-size: .78rem; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
 .dir-table tr:last-child td { border-bottom: none; }
 .dir-table tr:hover td { background: rgba(255,255,255,.02); }
 .dir-sub { font-size: .65rem; color: var(--text3); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -467,9 +468,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .alert-row.ok    { border-left-color: var(--green); }
 .alert-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
 .alert-body { flex: 1; }
-.alert-title { font-weight: 600; font-size: .82rem; }
-.alert-desc { font-size: .72rem; color: var(--text2); margin-top: 2px; line-height: 1.4; }
-.alert-time { font-size: .65rem; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-top: 3px; }
+.alert-title { font-weight: 600; font-size: .82rem; color: var(--text); }
+.alert-desc { font-size: .73rem; color: var(--text2); margin-top: 2px; line-height: 1.4; }
+.alert-time { font-size: .66rem; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-top: 3px; }
 
 /* ═══════════════════════════════════════
    DETAIL OVERLAY
@@ -487,7 +488,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 }
 .detail-hdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; gap: 16px; }
 .detail-title-wrap { display: flex; flex-direction: column; gap: 3px; }
-.detail-title { font-family: var(--display); font-size: 1.35rem; font-weight: 800; letter-spacing: -.5px; }
+.detail-title { font-family: var(--sans); font-size: 1.2rem; font-weight: 700; letter-spacing: -.3px; }
 .detail-subtitle { font-size: .72rem; color: var(--text2); font-family: var(--mono); }
 /* breadcrumb */
 .detail-breadcrumb {
@@ -524,7 +525,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 /* SETTINGS */
 .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .settings-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); padding: 18px; }
-.settings-title { font-family: var(--display); font-size: .9rem; font-weight: 700; margin-bottom: 14px; }
+.settings-title { font-family: var(--sans); font-size: .9rem; font-weight: 700; margin-bottom: 14px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
 .form-group { margin-bottom: 10px; }
 .form-label { display: block; font-size: .65rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text2); margin-bottom: 5px; }
@@ -647,7 +648,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 /* EMPTY STATE */
 .empty { text-align: center; padding: 48px 20px; color: var(--text2); }
 .empty-icon { font-size: 2rem; margin-bottom: 10px; }
-.empty-title { font-family: var(--display); font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.empty-title { font-family: var(--sans); font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
 
 /* LOADING SPINNER */
 .spinner { display: inline-block; width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; }
@@ -656,7 +657,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 /* SETUP SCREEN */
 .setup-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 40px; text-align: center; }
 .setup-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 36px; max-width: 480px; width: 100%; }
-.setup-title { font-family: var(--display); font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; }
+.setup-title { font-family: var(--sans); font-size: 1.3rem; font-weight: 700; margin-bottom: 8px; }
 .setup-desc { color: var(--text2); font-size: .82rem; margin-bottom: 24px; line-height: 1.6; }
 .setup-input { width: 100%; padding: 10px 14px; border-radius: 8px; background: var(--bg4); border: 1px solid var(--border2); color: var(--text); font-family: var(--sans); font-size: .85rem; margin-bottom: 12px; }
 .setup-input:focus { outline: none; border-color: var(--accent); }
@@ -1188,20 +1189,37 @@ function _applyUserScope() {
   const role = (scope.role || '').toUpperCase();
 
   if (role.startsWith('SVP')) {
-    // Marc sees all his stores — handled via svpStoreIds filter in applyFilters
+    // SVP sees all their assigned stores — handled via svpStoreIds filter in applyFilters
     return;
   }
-  if (role === 'RVP' && scope.email) {
-    const el = document.getElementById('filterRvp');
-    if (el) el.value = scope.email.toLowerCase();
+
+  // Build the key that the dropdown uses: email if available, else name
+  const userKey = _personKey(scope.email, scope.name);
+
+  // Helper: set a select to the value that matches this user, trying exact key first then name
+  const setSelect = (id, rebuildFns) => {
+    const el = document.getElementById(id); if (!el) return;
+    // Rebuild the dropdown first so options are populated
+    rebuildFns && rebuildFns();
+    // Try the key directly
+    if ([...el.options].some(o => o.value === userKey)) {
+      el.value = userKey;
+    } else if (scope.name) {
+      // Fall back to matching by display name
+      const nameLower = scope.name.toLowerCase();
+      const opt = [...el.options].find(o => o.textContent.toLowerCase() === nameLower);
+      if (opt) el.value = opt.value;
+    }
+  };
+
+  if (role === 'RVP') {
+    setSelect('filterRvp', null);
     _rebuildGmDropdown(); _rebuildDmDropdown();
-  } else if (role === 'GM' && scope.email) {
-    const el = document.getElementById('filterGm');
-    if (el) el.value = scope.email.toLowerCase();
+  } else if (role === 'GM') {
+    setSelect('filterGm', null);
     _rebuildDmDropdown();
-  } else if (role === 'DM' && scope.email) {
-    const el = document.getElementById('filterDm');
-    if (el) el.value = scope.email.toLowerCase();
+  } else if (role === 'DM') {
+    setSelect('filterDm', null);
   }
 }
 
@@ -1413,40 +1431,55 @@ function populateFilters() {
 function _dirFiltered() {
   const region = document.getElementById('filterRegion')?.value || '';
   const area   = document.getElementById('filterArea')?.value   || '';
+  // Note: _dirFiltered is used only to build hierarchical dropdown options,
+  // so we only filter by region/area here, not by RVP/GM/DM (those are applied in the dropdowns themselves)
   return S.directory.filter(s => (!region || s.region===region) && (!area || s.area===area));
+}
+
+// Helper: get the filter key for a person — email if we have it, else name (lowercased)
+// The GAS getStoreDirectory returns empty strings for dmEmail/gmEmail/rvpEmail,
+// so we always fall back to the name as the stable key.
+function _personKey(email, name) {
+  return (email && email.trim()) ? email.trim().toLowerCase() : (name||'').trim().toLowerCase();
 }
 
 function _rebuildRvpDropdown() {
   const sel = document.getElementById('filterRvp'); if (!sel) return;
   const cur = sel.value;
   const map = new Map();
-  _dirFiltered().forEach(s => { if (s.rvp && s.rvpEmail) map.set(s.rvpEmail.toLowerCase(), s.rvp); });
+  _dirFiltered().forEach(s => {
+    if (s.rvp) map.set(_personKey(s.rvpEmail, s.rvp), s.rvp);
+  });
   sel.innerHTML = '<option value="">All RVPs</option>' +
-    [...map.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([e,n])=>`<option value="${e}">${n}</option>`).join('');
+    [...map.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([k,n])=>`<option value="${k}">${n}</option>`).join('');
   if ([...sel.options].some(o=>o.value===cur)) sel.value=cur;
 }
 function _rebuildGmDropdown() {
   const sel = document.getElementById('filterGm'); if (!sel) return;
   const cur = sel.value;
-  const rvp = (document.getElementById('filterRvp')?.value||'').toLowerCase();
+  const rvpVal = (document.getElementById('filterRvp')?.value||'');
   const map = new Map();
-  _dirFiltered().filter(s=>!rvp||(s.rvpEmail||'').toLowerCase()===rvp)
-    .forEach(s => { if (s.gm && s.gmEmail) map.set(s.gmEmail.toLowerCase(), s.gm); });
+  _dirFiltered()
+    .filter(s => !rvpVal || _personKey(s.rvpEmail, s.rvp) === rvpVal)
+    .forEach(s => { if (s.gm) map.set(_personKey(s.gmEmail, s.gm), s.gm); });
   sel.innerHTML = '<option value="">All GMs</option>' +
-    [...map.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([e,n])=>`<option value="${e}">${n}</option>`).join('');
+    [...map.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([k,n])=>`<option value="${k}">${n}</option>`).join('');
   if ([...sel.options].some(o=>o.value===cur)) sel.value=cur;
 }
 function _rebuildDmDropdown() {
   const sel = document.getElementById('filterDm'); if (!sel) return;
   const cur = sel.value;
-  const rvp = (document.getElementById('filterRvp')?.value||'').toLowerCase();
-  const gm  = (document.getElementById('filterGm')?.value ||'').toLowerCase();
+  const rvpVal = (document.getElementById('filterRvp')?.value||'');
+  const gmVal  = (document.getElementById('filterGm')?.value ||'');
   const map = new Map();
   _dirFiltered()
-    .filter(s => (!rvp||(s.rvpEmail||'').toLowerCase()===rvp) && (!gm||(s.gmEmail||'').toLowerCase()===gm))
-    .forEach(s => { if (s.dm && s.dmEmail) map.set(s.dmEmail.toLowerCase(), s.dm); });
+    .filter(s =>
+      (!rvpVal || _personKey(s.rvpEmail, s.rvp) === rvpVal) &&
+      (!gmVal  || _personKey(s.gmEmail,  s.gm)  === gmVal)
+    )
+    .forEach(s => { if (s.dm) map.set(_personKey(s.dmEmail, s.dm), s.dm); });
   sel.innerHTML = '<option value="">All DMs</option>' +
-    [...map.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([e,n])=>`<option value="${e}">${n}</option>`).join('');
+    [...map.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([k,n])=>`<option value="${k}">${n}</option>`).join('');
   if ([...sel.options].some(o=>o.value===cur)) sel.value=cur;
 }
 
@@ -1480,9 +1513,9 @@ function applyFilters() {
   const area    = document.getElementById('filterArea')?.value   || '';
   const week    = document.getElementById('filterWeek')?.value   || '';
   const storeQ  = (document.getElementById('filterStore')?.value||'').trim();
-  const rvpE    = (document.getElementById('filterRvp')?.value   ||'').toLowerCase();
-  const gmE     = (document.getElementById('filterGm')?.value    ||'').toLowerCase();
-  const dmE     = (document.getElementById('filterDm')?.value    ||'').toLowerCase();
+  const rvpVal  = document.getElementById('filterRvp')?.value || '';
+  const gmVal   = document.getElementById('filterGm')?.value  || '';
+  const dmVal   = document.getElementById('filterDm')?.value  || '';
 
   const isSvp   = S.user && (S.user.role||'').toUpperCase().startsWith('SVP');
   const svpSet  = isSvp ? new Set(S.svpStoreIds.map(String)) : null;
@@ -1499,12 +1532,12 @@ function applyFilters() {
     }
     if (week   && s.weekOf !== week)   return false;
     if (storeQ && !sid.startsWith(storeQ)) return false;
-    if (rvpE || gmE || dmE) {
+    if (rvpVal || gmVal || dmVal) {
       const gs = S.dirById[sid];
       if (!gs) return false;
-      if (rvpE && (gs.rvpEmail||'').toLowerCase() !== rvpE) return false;
-      if (gmE  && (gs.gmEmail||'').toLowerCase()  !== gmE)  return false;
-      if (dmE  && (gs.dmEmail||'').toLowerCase()  !== dmE)  return false;
+      if (rvpVal && _personKey(gs.rvpEmail, gs.rvp) !== rvpVal) return false;
+      if (gmVal  && _personKey(gs.gmEmail,  gs.gm)  !== gmVal)  return false;
+      if (dmVal  && _personKey(gs.dmEmail,  gs.dm)  !== dmVal)  return false;
     }
     return true;
   });
@@ -1517,9 +1550,9 @@ function applyFilters() {
 function _scopedDirectoryStores() {
   const region  = document.getElementById('filterRegion')?.value || '';
   const area    = document.getElementById('filterArea')?.value   || '';
-  const rvpE    = (document.getElementById('filterRvp')?.value   ||'').toLowerCase();
-  const gmE     = (document.getElementById('filterGm')?.value    ||'').toLowerCase();
-  const dmE     = (document.getElementById('filterDm')?.value    ||'').toLowerCase();
+  const rvpVal  = document.getElementById('filterRvp')?.value    || '';
+  const gmVal   = document.getElementById('filterGm')?.value     || '';
+  const dmVal   = document.getElementById('filterDm')?.value     || '';
   const isSvp   = S.user && (S.user.role||'').toUpperCase().startsWith('SVP');
   const svpSet  = isSvp ? new Set(S.svpStoreIds.map(String)) : null;
 
@@ -1530,9 +1563,9 @@ function _scopedDirectoryStores() {
     if (svpSet && !svpSet.has(String(s.id))) return false;
     if (region && s.region !== region) return false;
     if (area   && s.area   !== area)   return false;
-    if (rvpE   && (s.rvpEmail||'').toLowerCase() !== rvpE) return false;
-    if (gmE    && (s.gmEmail||'').toLowerCase()  !== gmE)  return false;
-    if (dmE    && (s.dmEmail||'').toLowerCase()  !== dmE)  return false;
+    if (rvpVal && _personKey(s.rvpEmail, s.rvp) !== rvpVal) return false;
+    if (gmVal  && _personKey(s.gmEmail,  s.gm)  !== gmVal)  return false;
+    if (dmVal  && _personKey(s.dmEmail,  s.dm)  !== dmVal)  return false;
     return true;
   });
 }
@@ -2043,9 +2076,9 @@ function renderDirectory() {
   const status  = document.getElementById('dirStatus')?.value || '';
   const region  = document.getElementById('filterRegion')?.value || '';
   const area    = document.getElementById('filterArea')?.value   || '';
-  const rvpE    = (document.getElementById('filterRvp')?.value   ||'').toLowerCase();
-  const gmE     = (document.getElementById('filterGm')?.value    ||'').toLowerCase();
-  const dmE     = (document.getElementById('filterDm')?.value    ||'').toLowerCase();
+  const rvpVal  = document.getElementById('filterRvp')?.value    || '';
+  const gmVal   = document.getElementById('filterGm')?.value     || '';
+  const dmVal   = document.getElementById('filterDm')?.value     || '';
   const week    = document.getElementById('filterWeek')?.value   || '';
   const isSvp   = S.user && (S.user.role||'').toUpperCase().startsWith('SVP');
   const svpSet  = isSvp ? new Set(S.svpStoreIds.map(String)) : null;
@@ -2060,9 +2093,9 @@ function renderDirectory() {
     if (svpSet && !svpSet.has(key)) return false;
     if (region && s.region !== region) return false;
     if (area   && s.area   !== area)   return false;
-    if (rvpE   && (s.rvpEmail||'').toLowerCase() !== rvpE) return false;
-    if (gmE    && (s.gmEmail||'').toLowerCase()  !== gmE)  return false;
-    if (dmE    && (s.dmEmail||'').toLowerCase()  !== dmE)  return false;
+    if (rvpVal && _personKey(s.rvpEmail, s.rvp) !== rvpVal) return false;
+    if (gmVal  && _personKey(s.gmEmail,  s.gm)  !== gmVal)  return false;
+    if (dmVal  && _personKey(s.dmEmail,  s.dm)  !== dmVal)  return false;
     const submitted = submittedIds.has(key);
     if (status === 'submitted' && !submitted) return false;
     if (status === 'missing'   &&  submitted) return false;
