@@ -1,0 +1,2453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Parts Authority · HQ Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ═══════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════ */
+:root {
+  --bg:       #080a0f;
+  --bg2:      #0d1018;
+  --bg3:      #121520;
+  --bg4:      #181c28;
+  --bg5:      #1e2235;
+  --border:   rgba(255,255,255,.07);
+  --border2:  rgba(255,255,255,.13);
+  --text:     #e8ecf5;
+  --text2:    #7e8aab;
+  --text3:    #454e6b;
+  --accent:   #e0261a;
+  --accent2:  #b81e14;
+  --accent-glow: rgba(224,38,26,.18);
+  --green:    #00d68f;
+  --green-dim:#003d28;
+  --amber:    #f5a623;
+  --amber-dim:#3a2800;
+  --red:      #ff4757;
+  --red-dim:  #3a0a0f;
+  --blue:     #4a9eff;
+  --blue-dim: #0a1f3a;
+  --purple:   #b97fff;
+  --mono:     'DM Mono', monospace;
+  --sans:     'Inter', sans-serif;
+  --display:  'Syne', sans-serif;
+  --r:        10px;
+  --sidebar:  224px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 13px; overflow: hidden; }
+
+/* ═══════════════════════════════════════
+   LOGIN SCREEN
+═══════════════════════════════════════ */
+#loginScreen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+}
+.login-wrap {
+  width: 420px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 40px 36px;
+  box-shadow: 0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04);
+}
+.login-logo {
+  font-family: var(--display); font-size: 1.6rem; font-weight: 800;
+  letter-spacing: -1px; margin-bottom: 6px;
+}
+.login-logo .red { color: var(--accent); }
+.login-sub { font-size: .8rem; color: var(--text2); margin-bottom: 28px; letter-spacing: .02em; }
+.login-label { font-size: .7rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; display: block; }
+.login-typeahead-wrap { position: relative; margin-bottom: 20px; }
+#loginInput {
+  width: 100%; padding: 11px 14px; border-radius: 8px;
+  background: var(--bg4); border: 1px solid var(--border2);
+  color: var(--text); font-family: var(--sans); font-size: .9rem;
+  transition: border-color .15s;
+}
+#loginInput:focus { outline: none; border-color: var(--accent); }
+#loginInput::placeholder { color: var(--text3); }
+#loginDropdown {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--bg4); border: 1px solid var(--border2);
+  border-radius: 8px; max-height: 240px; overflow-y: auto; z-index: 100;
+  box-shadow: 0 12px 32px rgba(0,0,0,.5);
+}
+.login-option {
+  padding: 10px 14px; cursor: pointer; font-size: .85rem;
+  border-bottom: 1px solid var(--border);
+  transition: background .1s;
+}
+.login-option:last-child { border-bottom: none; }
+.login-option:hover { background: var(--bg5); }
+.login-option-role { font-size: .68rem; color: var(--text3); margin-top: 1px; font-family: var(--mono); }
+.login-selected {
+  display: none; padding: 10px 14px; border-radius: 8px;
+  background: rgba(0,214,143,.08); border: 1px solid rgba(0,214,143,.25);
+  font-size: .85rem; margin-bottom: 16px;
+}
+.login-selected .name { font-weight: 600; color: var(--green); }
+.login-selected .role { font-size: .72rem; color: var(--text2); font-family: var(--mono); margin-top: 2px; }
+.btn-login {
+  width: 100%; padding: 12px; border-radius: 8px;
+  background: var(--accent); color: #fff; border: none;
+  font-family: var(--display); font-size: .9rem; font-weight: 700;
+  cursor: pointer; letter-spacing: .03em; transition: background .15s;
+}
+.btn-login:hover { background: var(--accent2); }
+.btn-login:disabled { opacity: .5; cursor: not-allowed; }
+#loginStatus { margin-top: 12px; font-size: .78rem; color: var(--text2); text-align: center; min-height: 18px; }
+.login-loading { text-align:center; padding:20px; color:var(--text2); font-size:.8rem; }
+
+/* ═══════════════════════════════════════
+   APP SHELL
+═══════════════════════════════════════ */
+#app { display: none; flex-direction: column; height: 100vh; }
+#app.ready { display: flex; }
+
+/* TOPBAR */
+.topbar {
+  height: 52px; min-height: 52px;
+  display: flex; align-items: center; gap: 0;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 0 20px; position: relative; z-index: 50;
+}
+.topbar::after {
+  content: '';
+  position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, var(--accent) 0%, transparent 40%);
+}
+.tb-logo { font-family: var(--display); font-size: 1.05rem; font-weight: 800; letter-spacing: -.5px; white-space: nowrap; }
+.tb-logo .red { color: var(--accent); }
+.tb-logo .dim { color: var(--text3); font-weight: 400; font-size: .8rem; margin-left: 4px; }
+.tb-sep { width: 1px; height: 24px; background: var(--border); margin: 0 16px; }
+.tb-context {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .72rem; color: var(--text2); font-family: var(--mono);
+}
+.tb-context-badge {
+  padding: 2px 8px; border-radius: 4px;
+  background: var(--accent-glow); color: var(--accent);
+  border: 1px solid rgba(224,38,26,.25); font-weight: 500;
+}
+.tb-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+.tb-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border2);
+  background: transparent; color: var(--text2); font-family: var(--sans); font-size: .75rem;
+  font-weight: 500; cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.tb-btn:hover { border-color: var(--accent); color: var(--accent); }
+.tb-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+.tb-btn.primary:hover { background: var(--accent2); }
+/* refresh timestamp */
+.tb-refresh-wrap { display:flex; align-items:center; gap:6px; }
+.tb-refresh-ts { font-size:.65rem; color:var(--text3); font-family:var(--mono); }
+
+.tb-user {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 10px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg3);
+  font-size: .75rem; font-family: var(--mono); cursor: pointer;
+  transition: all .15s; color: var(--text2);
+}
+.tb-user:hover { border-color: var(--border2); color: var(--text); }
+.tb-user-avatar {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent-glow); border: 1px solid rgba(224,38,26,.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .7rem; font-weight: 700; color: var(--accent);
+}
+
+/* DEADLINE BANNER */
+.deadline-banner {
+  display: none;
+  padding: 6px 20px;
+  background: linear-gradient(90deg, rgba(245,166,35,.12) 0%, transparent 60%);
+  border-bottom: 1px solid rgba(245,166,35,.2);
+  font-size: .75rem; color: var(--amber);
+  align-items: center; gap: 10px;
+}
+.deadline-banner.show { display: flex; }
+.deadline-banner strong { color: var(--text); }
+
+/* BODY */
+.body { display: flex; flex: 1; overflow: hidden; }
+
+/* SIDEBAR */
+.sidebar {
+  width: var(--sidebar); min-width: var(--sidebar);
+  background: var(--bg2); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.sidebar-top { padding: 16px 12px 8px; flex-shrink: 0; }
+.sidebar-section-label {
+  font-size: .62rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--text3); padding: 0 8px; margin-bottom: 4px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 10px; border-radius: 7px; cursor: pointer;
+  font-size: .8rem; color: var(--text2); font-weight: 500;
+  transition: all .12s; border: 1px solid transparent; margin-bottom: 1px;
+}
+.nav-item:hover { background: var(--bg4); color: var(--text); }
+.nav-item.active { background: var(--accent-glow); border-color: rgba(224,38,26,.25); color: var(--accent); }
+.nav-icon { font-size: .9rem; width: 18px; text-align: center; }
+.nav-badge {
+  margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 9px; background: var(--red-dim); color: var(--red);
+  font-size: .62rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono);
+}
+.sidebar-sep { height: 1px; background: var(--border); margin: 10px 12px; }
+
+/* FILTER AREA */
+.filter-area { padding: 0 10px 10px; flex-shrink: 0; }
+.filter-label { font-size: .62rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); padding: 0 2px; margin-bottom: 6px; display: block; }
+.filter-sel {
+  width: 100%; padding: 6px 10px 6px 10px; border-radius: 6px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-family: var(--sans); font-size: .75rem;
+  cursor: pointer; appearance: none; margin-bottom: 5px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23454e6b'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+  transition: border-color .15s;
+}
+.filter-sel:focus { outline: none; border-color: var(--accent); color: var(--text); }
+.filter-text {
+  width: 100%; padding: 6px 10px; border-radius: 6px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-family: var(--mono); font-size: .72rem;
+  margin-bottom: 5px;
+}
+.filter-text:focus { outline: none; border-color: var(--accent); color: var(--text); }
+.filter-text::placeholder { color: var(--text3); }
+
+/* SIDEBAR MINI LIST */
+.sidebar-scroll { flex: 1; overflow-y: auto; padding: 0 10px 12px; }
+.mini-store {
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 6px; border-radius: 5px; cursor: pointer;
+  font-size: .72rem; color: var(--text2); font-family: var(--mono);
+  transition: background .1s;
+}
+.mini-store:hover { background: var(--bg4); color: var(--text); }
+.mini-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.mini-id { font-weight: 500; color: var(--text); min-width: 28px; }
+.mini-hrs { margin-left: auto; color: var(--text3); font-size: .65rem; }
+
+/* CONTENT */
+.content { flex: 1; overflow-y: auto; background: var(--bg); }
+.pane { display: none; padding: 22px 24px; }
+.pane.active { display: block; }
+
+/* PAGE HEADER */
+.page-hdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; }
+.page-title { font-family: var(--display); font-size: 1.35rem; font-weight: 800; letter-spacing: -.5px; }
+.page-title span { color: var(--text3); font-weight: 400; font-size: .8rem; margin-left: 8px; letter-spacing: 0; font-family: var(--sans); }
+.page-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ═══════════════════════════════════════
+   SUBMISSION PROGRESS BAR
+═══════════════════════════════════════ */
+.submit-progress-wrap {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px 18px; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 20px;
+}
+.submit-progress-label { font-size: .72rem; font-weight: 600; color: var(--text2); white-space: nowrap; }
+.submit-progress-bar-outer {
+  flex: 1; height: 8px; background: var(--bg5); border-radius: 4px; overflow: hidden;
+}
+.submit-progress-bar-inner {
+  height: 100%; border-radius: 4px; transition: width .4s ease;
+}
+.submit-progress-pct {
+  font-family: var(--mono); font-size: .85rem; font-weight: 600; white-space: nowrap; min-width: 40px; text-align: right;
+}
+.submit-progress-detail {
+  font-family: var(--mono); font-size: .68rem; color: var(--text3); white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════
+   KPI STRIP
+═══════════════════════════════════════ */
+.kpi-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.kpi {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px 16px; position: relative; overflow: hidden;
+}
+.kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.kpi.c-red::before { background: var(--accent); }
+.kpi.c-green::before { background: var(--green); }
+.kpi.c-amber::before { background: var(--amber); }
+.kpi.c-blue::before { background: var(--blue); }
+.kpi.c-purple::before { background: var(--purple); }
+.kpi-lbl { font-size: .62rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; }
+/* KPI values use Inter, not Syne — prevents stretched glyphs */
+.kpi-val { font-family: var(--sans); font-size: 1.9rem; font-weight: 700; line-height: 1; letter-spacing: -.03em; }
+.kpi-sub { font-size: .68rem; color: var(--text2); margin-top: 5px; font-family: var(--mono); }
+
+/* ═══════════════════════════════════════
+   STATUS TABLE (OVERVIEW)
+═══════════════════════════════════════ */
+.section-hdr { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.section-title { font-family: var(--display); font-size: .9rem; font-weight: 700; letter-spacing: -.3px; }
+.section-pill {
+  padding: 2px 8px; border-radius: 4px;
+  background: var(--bg4); color: var(--text2);
+  font-size: .65rem; font-family: var(--mono); font-weight: 500;
+}
+
+/* Group header */
+.group-hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 7px;
+  background: var(--bg3); border: 1px solid var(--border);
+  margin-bottom: 8px; margin-top: 16px; cursor: pointer;
+  transition: border-color .15s;
+}
+.group-hdr:first-child { margin-top: 0; }
+.group-hdr:hover { border-color: var(--border2); }
+.group-hdr-title { font-family: var(--display); font-size: .82rem; font-weight: 700; letter-spacing: -.2px; }
+.group-hdr-stats { margin-left: auto; display: flex; gap: 10px; }
+.group-stat { font-size: .7rem; font-family: var(--mono); color: var(--text2); }
+.group-stat strong { color: var(--text); font-weight: 500; }
+.group-chevron { color: var(--text3); font-size: .75rem; transition: transform .2s; margin-left: 4px; }
+.group-hdr.collapsed .group-chevron { transform: rotate(-90deg); }
+
+/* Status table */
+.status-table-wrap {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden; margin-bottom: 8px;
+}
+.status-table { width: 100%; border-collapse: collapse; }
+.status-table th {
+  font-size: .62rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text3); padding: 8px 12px; background: var(--bg4);
+  border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap;
+}
+.status-table th:not(:first-child) { text-align: right; }
+.status-table td {
+  padding: 7px 12px; border-bottom: 1px solid var(--border);
+  font-size: .78rem; vertical-align: middle;
+}
+.status-table tr:last-child td { border-bottom: none; }
+.status-table tr:hover td { background: var(--bg4); }
+.status-table td:not(:first-child) { text-align: right; }
+.store-id-cell { display: flex; align-items: center; gap: 8px; }
+.store-id-num { font-family: var(--mono); font-weight: 600; font-size: .8rem; min-width: 32px; color: var(--text); }
+.store-city { color: var(--text2); font-size: .7rem; }
+.status-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 7px; border-radius: 4px; font-size: .65rem; font-weight: 600; white-space: nowrap;
+}
+.sp-green  { background: rgba(0,214,143,.1); color: var(--green);  border: 1px solid rgba(0,214,143,.2); }
+.sp-amber  { background: rgba(245,166,35,.1); color: var(--amber);  border: 1px solid rgba(245,166,35,.2); }
+.sp-red    { background: rgba(255,71,87,.1);   color: var(--red);    border: 1px solid rgba(255,71,87,.2); }
+.sp-gray   { background: var(--bg4);            color: var(--text3);  border: 1px solid var(--border); }
+.sp-blue   { background: rgba(74,158,255,.1);  color: var(--blue);   border: 1px solid rgba(74,158,255,.2); }
+.num-cell { font-family: var(--mono); font-size: .78rem; }
+.hours-mini { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; }
+.hours-bar-mini { width: 48px; height: 4px; background: var(--bg5); border-radius: 2px; overflow: hidden; display: inline-block; vertical-align: middle; }
+.hours-fill-mini { height: 100%; border-radius: 2px; }
+.pct-cell { font-family: var(--mono); font-size: .75rem; }
+.click-row { cursor: pointer; }
+/* delta indicator */
+.delta { font-family: var(--mono); font-size: .68rem; }
+.delta.up   { color: var(--green); }
+.delta.down { color: var(--red); }
+.delta.flat { color: var(--text3); }
+
+/* ═══════════════════════════════════════
+   DIRECTORY - COMPACT
+═══════════════════════════════════════ */
+.dir-controls {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;
+}
+.dir-search {
+  flex: 1; min-width: 180px; padding: 7px 12px;
+  border-radius: 7px; background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--sans); font-size: .8rem;
+}
+.dir-search:focus { outline: none; border-color: var(--accent); }
+.dir-search::placeholder { color: var(--text3); }
+
+.dir-table-wrap { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.dir-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.dir-table col.c-id   { width: 48px; }
+.dir-table col.c-store { width: 155px; }
+.dir-table col.c-city  { width: 95px; }
+.dir-table col.c-mgr   { width: 115px; }
+.dir-table col.c-dm    { width: 110px; }
+.dir-table col.c-gm    { width: 110px; }
+.dir-table col.c-rvp   { width: 96px; }
+.dir-table col.c-status{ width: 56px; }
+.dir-table col.c-week  { width: 72px; }
+.dir-table col.c-chase { width: 52px; }
+.dir-table th {
+  font-size: .6rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text3); padding: 7px 10px; background: var(--bg4);
+  border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; overflow: hidden;
+}
+.dir-table td { padding: 5px 10px; border-bottom: 1px solid var(--border); font-size: .75rem; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dir-table tr:last-child td { border-bottom: none; }
+.dir-table tr:hover td { background: rgba(255,255,255,.02); }
+.dir-sub { font-size: .65rem; color: var(--text3); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub-badge {
+  display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: .6rem; font-weight: 700;
+  letter-spacing: .02em;
+}
+.sub-yes { background: rgba(0,214,143,.12); color: var(--green); }
+.sub-no  { background: rgba(255,71,87,.1);   color: var(--red);   }
+.dir-summary { display: flex; gap: 16px; padding: 8px 12px; background: var(--bg4); border-bottom: 1px solid var(--border); font-size: .72rem; color: var(--text2); font-family: var(--mono); flex-wrap: wrap; }
+.dir-summary strong { color: var(--text); }
+/* chase button */
+.btn-chase {
+  padding: 2px 7px; border-radius: 4px; border: 1px solid var(--border2);
+  background: transparent; color: var(--text2); font-size: .65rem; cursor: pointer;
+  transition: all .12s; white-space: nowrap;
+}
+.btn-chase:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ═══════════════════════════════════════
+   ROSTER TABLE
+═══════════════════════════════════════ */
+.roster-wrap { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.roster-table { width: 100%; border-collapse: collapse; }
+.roster-table th {
+  font-size: .6rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text3);
+  padding: 8px 10px; background: var(--bg4); border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap;
+}
+.roster-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); font-size: .75rem; }
+.roster-table tr:last-child td { border-bottom: none; }
+.roster-table tr:hover td { background: var(--bg4); }
+
+/* ═══════════════════════════════════════
+   CHARTS
+═══════════════════════════════════════ */
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.chart-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); padding: 18px; }
+.chart-title { font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text2); margin-bottom: 14px; }
+.chart-box { position: relative; height: 200px; }
+
+/* ═══════════════════════════════════════
+   ALERTS
+═══════════════════════════════════════ */
+.alert-strip { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.alert-count-badge {
+  padding: 4px 12px; border-radius: 6px; font-size: .73rem; font-weight: 700; font-family: var(--mono);
+  cursor: pointer; transition: all .15s;
+}
+/* DM grouping on alerts page */
+.alert-dm-group { margin-bottom: 18px; }
+.alert-dm-hdr {
+  font-size: .7rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text2); padding: 4px 0 8px; border-bottom: 1px solid var(--border); margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.alert-dm-crit-count { font-family: var(--mono); color: var(--red); font-size: .65rem; }
+.alerts-list { display: flex; flex-direction: column; gap: 6px; }
+.alert-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-left: 3px solid; border-radius: 7px; padding: 10px 14px;
+}
+.alert-row.crit  { border-left-color: var(--red); }
+.alert-row.warn  { border-left-color: var(--amber); }
+.alert-row.ok    { border-left-color: var(--green); }
+.alert-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+.alert-body { flex: 1; }
+.alert-title { font-weight: 600; font-size: .82rem; }
+.alert-desc { font-size: .72rem; color: var(--text2); margin-top: 2px; line-height: 1.4; }
+.alert-time { font-size: .65rem; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-top: 3px; }
+
+/* ═══════════════════════════════════════
+   DETAIL OVERLAY
+═══════════════════════════════════════ */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.75);
+  z-index: 200; display: none; align-items: center; justify-content: center;
+}
+.overlay.open { display: flex; }
+.detail-panel {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 14px; width: 960px; max-width: 96vw; max-height: 92vh;
+  overflow-y: auto; padding: 26px;
+  box-shadow: 0 32px 80px rgba(0,0,0,.7);
+}
+.detail-hdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; gap: 16px; }
+.detail-title-wrap { display: flex; flex-direction: column; gap: 3px; }
+.detail-title { font-family: var(--display); font-size: 1.35rem; font-weight: 800; letter-spacing: -.5px; }
+.detail-subtitle { font-size: .72rem; color: var(--text2); font-family: var(--mono); }
+/* breadcrumb */
+.detail-breadcrumb {
+  display: flex; align-items: center; gap: 5px;
+  font-size: .68rem; color: var(--text3); font-family: var(--mono); margin-top: 2px;
+}
+.detail-breadcrumb span { color: var(--text2); }
+.detail-breadcrumb .sep { color: var(--text3); }
+.detail-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.dept-tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+.dept-tab { padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg3); color: var(--text2); font-size: .75rem; font-weight: 500; cursor: pointer; transition: all .12s; }
+.dept-tab:hover { border-color: var(--border2); color: var(--text); }
+.dept-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.detail-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 18px; }
+.detail-kpi { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.detail-kpi-lbl { font-size: .6rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); margin-bottom: 4px; }
+/* detail KPI values also use Inter for proper number rendering */
+.detail-kpi-val { font-family: var(--sans); font-size: 1.55rem; font-weight: 700; line-height: 1; letter-spacing: -.02em; }
+/* hours by day mini chart */
+.day-chart-wrap { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; }
+.day-chart-title { font-size: .62rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; }
+.day-chart-bars { display: grid; grid-template-columns: repeat(7,1fr); gap: 6px; align-items: flex-end; height: 72px; }
+.day-bar-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.day-bar-outer { flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: flex-end; }
+.day-bar-fill { border-radius: 3px 3px 0 0; min-height: 2px; transition: height .3s; }
+.day-bar-label { font-family: var(--mono); font-size: .58rem; color: var(--text3); text-transform: uppercase; }
+.day-bar-val { font-family: var(--mono); font-size: .6rem; color: var(--text2); }
+.sched-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 18px; }
+.sched-col { background: var(--bg3); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+.sched-col-hdr { padding: 5px 8px; font-family: var(--mono); font-size: .65rem; font-weight: 500; color: var(--text2); background: var(--bg4); text-align: center; text-transform: uppercase; letter-spacing: .06em; }
+.sched-col-body { padding: 5px; min-height: 60px; }
+.shift-chip { padding: 2px 5px; border-radius: 3px; font-size: .6rem; font-weight: 500; margin-bottom: 2px; background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(224,38,26,.18); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+/* SETTINGS */
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.settings-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); padding: 18px; }
+.settings-title { font-family: var(--display); font-size: .9rem; font-weight: 700; margin-bottom: 14px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.form-group { margin-bottom: 10px; }
+.form-label { display: block; font-size: .65rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text2); margin-bottom: 5px; }
+.form-input {
+  width: 100%; padding: 7px 10px; border-radius: 6px;
+  background: var(--bg4); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--sans); font-size: .8rem;
+}
+.form-input:focus { outline: none; border-color: var(--accent); }
+.form-cb { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--text2); cursor: pointer; margin-bottom: 8px; }
+.form-cb input { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+  background: var(--bg4); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 10px 16px; font-size: .8rem;
+  transform: translateY(60px); opacity: 0; transition: all .2s; pointer-events: none;
+  max-width: 300px; font-family: var(--sans);
+}
+.toast.show { transform: none; opacity: 1; }
+.toast.ok    { border-color: rgba(0,214,143,.4); }
+.toast.warn  { border-color: rgba(245,166,35,.4); }
+.toast.error { border-color: rgba(255,71,87,.4); }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* EMPTY STATE */
+.empty { text-align: center; padding: 48px 20px; color: var(--text2); }
+.empty-icon { font-size: 2rem; margin-bottom: 10px; }
+.empty-title { font-family: var(--display); font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+
+/* LOADING SPINNER */
+.spinner { display: inline-block; width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* SETUP SCREEN */
+.setup-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 40px; text-align: center; }
+.setup-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 36px; max-width: 480px; width: 100%; }
+.setup-title { font-family: var(--display); font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; }
+.setup-desc { color: var(--text2); font-size: .82rem; margin-bottom: 24px; line-height: 1.6; }
+.setup-input { width: 100%; padding: 10px 14px; border-radius: 8px; background: var(--bg4); border: 1px solid var(--border2); color: var(--text); font-family: var(--sans); font-size: .85rem; margin-bottom: 12px; }
+.setup-input:focus { outline: none; border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="loginScreen">
+  <div class="login-wrap">
+    <div class="login-logo"><span class="red">Parts Authority</span></div>
+    <div class="login-sub">HQ Command Center · Leadership Access Only</div>
+    <label class="login-label">Your Name</label>
+    <div class="login-typeahead-wrap">
+      <input id="loginInput" type="text" placeholder="Type your name to search…" autocomplete="off"/>
+      <div id="loginDropdown"></div>
+    </div>
+    <div id="loginSelectedBox" class="login-selected">
+      <div class="name" id="loginSelectedName"></div>
+      <div class="role" id="loginSelectedRole"></div>
+    </div>
+    <button class="btn-login" id="loginBtn" onclick="confirmLogin()" disabled>Enter Dashboard →</button>
+    <div id="loginStatus"></div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app">
+
+  <!-- DEADLINE BANNER -->
+  <div class="deadline-banner" id="deadlineBanner"></div>
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-logo"><span class="red">Parts Authority</span><span class="dim">HQ Dashboard</span></div>
+    <div class="tb-sep"></div>
+    <div class="tb-context" id="topContext">Loading…</div>
+    <div class="tb-actions">
+      <div class="tb-refresh-wrap">
+        <button class="tb-btn" onclick="refresh()">⟳ Refresh</button>
+        <span class="tb-refresh-ts" id="refreshTs"></span>
+      </div>
+      <button class="tb-btn" onclick="exportCSV()">↓ Export</button>
+      <button class="tb-btn primary" onclick="saveDefaultView()">⭐ Save View</button>
+      <button class="tb-btn" onclick="showPane('settings')">⚙</button>
+      <div class="tb-user" id="topbarUser" onclick="showLoginScreen()">
+        <div class="tb-user-avatar" id="topbarAvatar">?</div>
+        <span id="topbarName">Sign In</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-top">
+        <div class="sidebar-section-label">Views</div>
+        <div class="nav-item active" id="nav-overview" onclick="showPane('overview')">
+          <span class="nav-icon">📊</span> Overview
+        </div>
+        <div class="nav-item" id="nav-directory" onclick="showPane('directory')">
+          <span class="nav-icon">📋</span> Directory
+        </div>
+        <div class="nav-item" id="nav-roster" onclick="showPane('roster')">
+          <span class="nav-icon">👥</span> Roster
+        </div>
+        <div class="nav-item" id="nav-trends" onclick="showPane('trends')">
+          <span class="nav-icon">📈</span> Trends
+        </div>
+        <div class="nav-item" id="nav-alerts" onclick="showPane('alerts')">
+          <span class="nav-icon">🚨</span> Alerts
+          <span class="nav-badge" id="alertBadge" style="display:none">0</span>
+        </div>
+      </div>
+
+      <div class="sidebar-sep"></div>
+
+      <div class="filter-area">
+        <span class="filter-label">Filters</span>
+        <select class="filter-sel" id="filterRegion" onchange="onRegionChange()">
+          <option value="">All Regions</option>
+        </select>
+        <select class="filter-sel" id="filterArea" onchange="onAreaChange()">
+          <option value="">All Areas</option>
+        </select>
+        <select class="filter-sel" id="filterRvp" onchange="onRvpChange()">
+          <option value="">All RVPs</option>
+        </select>
+        <select class="filter-sel" id="filterGm" onchange="onGmChange()">
+          <option value="">All GMs</option>
+        </select>
+        <select class="filter-sel" id="filterDm" onchange="applyFilters()">
+          <option value="">All DMs</option>
+        </select>
+        <select class="filter-sel" id="filterWeek" onchange="applyFilters()">
+          <option value="">All Weeks</option>
+        </select>
+        <input class="filter-text" id="filterStore" type="text" placeholder="Store #" oninput="applyFilters()"/>
+      </div>
+
+      <div class="sidebar-sep"></div>
+      <div style="padding:0 10px 6px;font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)">Stores</div>
+      <div class="sidebar-scroll" id="sidebarStores"></div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content" id="contentArea">
+
+      <!-- SETUP -->
+      <div id="setupPane" class="setup-screen" style="display:none">
+        <div class="setup-card">
+          <div class="setup-title">🏢 Connect Backend</div>
+          <div class="setup-desc">Enter your Google Apps Script URL to load schedule data.</div>
+          <input class="setup-input" id="setupUrl" type="url" placeholder="https://script.google.com/macros/s/…/exec"/>
+          <button class="btn-login" onclick="saveSetup()">Connect →</button>
+        </div>
+      </div>
+
+      <!-- OVERVIEW -->
+      <div class="pane active" id="pane-overview">
+        <div class="page-hdr">
+          <div class="page-title">Overview<span id="overviewLabel"></span></div>
+        </div>
+        <div id="submitProgressBar"></div>
+        <div class="kpi-strip" id="kpiStrip"></div>
+        <div id="storeGroups"></div>
+      </div>
+
+      <!-- DIRECTORY -->
+      <div class="pane" id="pane-directory">
+        <div class="page-hdr">
+          <div class="page-title">Store Directory</div>
+          <div class="page-actions">
+            <button class="tb-btn" onclick="emailMissingFiltered()">✉ Email All Missing</button>
+          </div>
+        </div>
+        <div class="dir-controls">
+          <input class="dir-search" id="dirSearch" type="text" placeholder="Search store, city, manager, DM…" oninput="renderDirectory()"/>
+          <select class="filter-sel" style="width:150px;margin-bottom:0" id="dirStatus" onchange="renderDirectory()">
+            <option value="">All Statuses</option>
+            <option value="submitted">✅ Submitted</option>
+            <option value="missing">⚠ Not Submitted</option>
+          </select>
+        </div>
+        <div id="dirSummary" class="dir-table-wrap" style="border-bottom:none;border-radius:var(--r) var(--r) 0 0">
+          <div class="dir-summary" id="dirSummaryBar"></div>
+        </div>
+        <div class="dir-table-wrap" style="border-radius:0 0 var(--r) var(--r);border-top:none">
+          <table class="dir-table" id="dirTable">
+            <colgroup>
+              <col class="c-id"/><col class="c-store"/><col class="c-city"/><col class="c-mgr"/>
+              <col class="c-dm"/><col class="c-gm"/><col class="c-rvp"/>
+              <col class="c-status"/><col class="c-week"/><col class="c-chase"/>
+            </colgroup>
+            <thead><tr>
+              <th>#</th><th>Store</th><th>City/State</th><th>Manager</th>
+              <th>DM</th><th>GM</th><th>RVP</th>
+              <th>Status</th><th>Week</th><th></th>
+            </tr></thead>
+            <tbody id="dirBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ROSTER -->
+      <div class="pane" id="pane-roster">
+        <div class="page-hdr">
+          <div class="page-title">Full Roster</div>
+          <div class="page-actions">
+            <select class="filter-sel" style="width:140px;margin-bottom:0" id="rosterStore" onchange="renderRoster()">
+              <option value="">All Stores</option>
+            </select>
+            <button class="tb-btn" onclick="exportRosterCSV()">↓ CSV</button>
+          </div>
+        </div>
+        <div class="roster-wrap">
+          <table class="roster-table" id="rosterTable">
+            <thead><tr>
+              <th>Store</th><th>Employee</th><th>Title</th><th>Mgr?</th>
+              <th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th>
+              <th>Total Hrs</th>
+            </tr></thead>
+            <tbody id="rosterBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TRENDS -->
+      <div class="pane" id="pane-trends">
+        <div class="page-hdr"><div class="page-title">Trends</div></div>
+        <div class="chart-grid" id="trendCharts">
+          <div class="chart-card"><div class="chart-title">Hours by Week</div><div class="chart-box"><canvas id="chartHrsWoW"></canvas></div></div>
+          <div class="chart-card"><div class="chart-title">Headcount by Week</div><div class="chart-box"><canvas id="chartHCWoW"></canvas></div></div>
+          <div class="chart-card"><div class="chart-title">Hours by Store (Filtered)</div><div class="chart-box"><canvas id="chartStoreHrs"></canvas></div></div>
+          <div class="chart-card"><div class="chart-title">Budget Utilization % by Store</div><div class="chart-box"><canvas id="chartBudget"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- ALERTS -->
+      <div class="pane" id="pane-alerts">
+        <div class="page-hdr"><div class="page-title">Flags &amp; Alerts</div></div>
+        <div class="alert-strip" id="alertStrip"></div>
+        <div id="alertsList"></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="pane" id="pane-settings">
+        <div class="page-hdr"><div class="page-title">Settings</div></div>
+        <div class="settings-grid">
+          <div class="settings-card">
+            <div class="settings-title">🔗 Connection</div>
+            <div class="form-group">
+              <label class="form-label">Apps Script URL</label>
+              <input class="form-input" id="settingsUrl" type="url"/>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="tb-btn primary" onclick="saveSettings()">Save</button>
+              <button class="tb-btn" onclick="testConnection()">Test Ping</button>
+            </div>
+          </div>
+          <div class="settings-card">
+            <div class="settings-title">⚙️ Thresholds</div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Min Hours/Store</label><input class="form-input" id="cfgMinHours" type="number" placeholder="160"/></div>
+              <div class="form-group"><label class="form-label">Max Hours/Store</label><input class="form-input" id="cfgMaxHours" type="number" placeholder="320"/></div>
+              <div class="form-group"><label class="form-label">Warn Util % (hi)</label><input class="form-input" id="cfgWarnUtilHigh" type="number" placeholder="85"/></div>
+              <div class="form-group"><label class="form-label">Crit Util % (hi)</label><input class="form-input" id="cfgCritUtilHigh" type="number" placeholder="100"/></div>
+              <div class="form-group"><label class="form-label">Warn Util % (lo)</label><input class="form-input" id="cfgWarnUtilLow" type="number" placeholder="75"/></div>
+              <div class="form-group"><label class="form-label">Crit Util % (lo)</label><input class="form-input" id="cfgCritUtilLow" type="number" placeholder="60"/></div>
+              <div class="form-group"><label class="form-label">Min Headcount</label><input class="form-input" id="cfgMinHC" type="number" placeholder="2"/></div>
+              <div class="form-group"><label class="form-label">Stale Days</label><input class="form-input" id="cfgStaleDays" type="number" placeholder="10"/></div>
+            </div>
+            <div class="form-group"><label class="form-label">Submission Deadline (Day of Week)</label>
+              <select class="form-input" id="cfgDeadlineDay">
+                <option value="0">Sunday</option><option value="1">Monday</option>
+                <option value="2">Tuesday</option><option value="3">Wednesday</option>
+                <option value="4" selected>Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
+              </select>
+            </div>
+            <div class="form-cb"><input type="checkbox" id="cfgCheckMgr"/> Flag stores with no manager scheduled</div>
+            <div class="form-cb"><input type="checkbox" id="cfgCheckWeekend"/> Flag missing weekend coverage</div>
+            <div class="form-cb"><input type="checkbox" id="cfgCheckFinancials"/> Flag missing financial inputs</div>
+            <div style="margin-top:10px">
+              <button class="tb-btn primary" onclick="saveThresholds()">Save Thresholds</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /body -->
+</div><!-- /app -->
+
+<!-- DETAIL OVERLAY -->
+<div class="overlay" id="detailOverlay" onclick="if(event.target===this)closeDetail()">
+  <div class="detail-panel" id="detailPanel">
+    <div class="detail-hdr">
+      <div class="detail-title-wrap">
+        <div class="detail-title" id="detailTitle"></div>
+        <div class="detail-subtitle" id="detailSubtitle"></div>
+        <div class="detail-breadcrumb" id="detailBreadcrumb"></div>
+      </div>
+      <div class="detail-actions">
+        <button class="tb-btn" onclick="downloadJson()">↓ JSON</button>
+        <button class="tb-btn" id="btnSendScheduler" onclick="sendToScheduler()">📅 Send to Scheduler</button>
+        <button class="tb-btn" onclick="closeDetail()">✕</button>
+      </div>
+    </div>
+    <div id="detailBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  CONSTANTS & STATE
+// ═══════════════════════════════════════════════════════
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const HQ_URL = 'https://script.google.com/macros/s/AKfycbwcgNWQlPy02S66iPGcgmStWKUeTMZFUqY71-GToC-zXmhx6bO_8U3PHYGwmZgvQxGWGA/exec';
+
+const S = {
+  apiUrl: '',
+  stores: [],       // schedule data from Schedules tab
+  directory: [],    // full store directory (GS_DIRECTORY equivalent, loaded dynamically)
+  dirById: {},      // keyed by storeId string
+  svpStoreIds: [],  // Marc's store IDs
+  filtered: [],
+  config: { storeMap: {} },
+  currentPane: 'overview',
+  user: null,
+  charts: {},
+  lastLoaded: null,
+  prevWeekStores: {}, // storeId → totalHours for prior week (for Δ column)
+  thresholds: {
+    minHours: 160, maxHours: 320,
+    warnUtilHigh: 85, critUtilHigh: 100,
+    warnUtilLow: 75,  critUtilLow: 60,
+    minHC: 2, singleCoverage: 1,
+    checkManagerCoverage: true, checkWeekendCoverage: false,
+    maxMgrPct: 50, minDaysWithCoverage: 5,
+    warnLaborPctHigh: 18, critLaborPctHigh: 22,
+    minLaborPct: 10, checkMissingFinancials: true,
+    staleDays: 10, deadlineDay: 4,
+    greenUtilLow: 90, greenUtilHigh: 100,
+    earlySubmitDays: 5, greenLaborPctLow: 15, greenLaborPctHigh: 18
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+//  LOGIN — dynamic from API
+// ═══════════════════════════════════════════════════════
+let _loginPeople = [];
+let _loginSelected = null;
+
+async function loadLoginPeople() {
+  // Show loading state
+  document.getElementById('loginDropdown').innerHTML =
+    '<div class="login-loading">Loading roster…</div>';
+
+  try {
+    const url = (localStorage.getItem('hqDashboardUrl') || HQ_URL);
+    const res  = await fetch(`${url}?action=getLeadership&_=${Date.now()}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'API error');
+
+    // Store SVP store IDs globally
+    S.svpStoreIds = data.svpStoreIds || [];
+
+    _loginPeople = data.leadership
+      .sort((a, b) => {
+        const roleOrder = { SVP: 0, RVP: 1, GM: 2, DM: 3 };
+        const ra = roleOrder[a.role.split(' ')[0]] ?? 9;
+        const rb = roleOrder[b.role.split(' ')[0]] ?? 9;
+        if (ra !== rb) return ra - rb;
+        return a.name.localeCompare(b.name);
+      });
+  } catch (e) {
+    // Fallback: show an empty list with error hint
+    _loginPeople = [];
+    document.getElementById('loginStatus').textContent = '⚠ Could not load roster. Check API URL in Settings.';
+  }
+  document.getElementById('loginDropdown').style.display = 'none';
+}
+
+function initLogin() {
+  const input = document.getElementById('loginInput');
+  const dd    = document.getElementById('loginDropdown');
+
+  input.oninput = () => {
+    _loginSelected = null;
+    document.getElementById('loginBtn').disabled = true;
+    document.getElementById('loginSelectedBox').style.display = 'none';
+
+    const q = input.value.trim().toLowerCase();
+    if (!q) { dd.style.display = 'none'; return; }
+
+    const hits = _loginPeople.filter(p =>
+      p.name.toLowerCase().includes(q) || p.role.toLowerCase().includes(q)
+    ).slice(0, 14);
+
+    if (!hits.length) {
+      dd.innerHTML = `<div style="padding:10px 14px;font-size:.8rem;color:var(--text3)">No matches</div>`;
+      dd.style.display = 'block'; return;
+    }
+    const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+    dd.innerHTML = hits.map(p => `
+      <div class="login-option" data-key="${p.email || '__svp__' + p.name}">
+        <div>${p.name.replace(re, '<strong style="color:var(--accent)">$1</strong>')}</div>
+        <div class="login-option-role">${p.role}</div>
+      </div>`).join('');
+    dd.style.display = 'block';
+  };
+
+  dd.onclick = e => {
+    const opt = e.target.closest('.login-option');
+    if (!opt) return;
+    const key = opt.dataset.key;
+    const p = _loginPeople.find(x => (x.email || '__svp__' + x.name) === key);
+    if (!p) return;
+    _loginSelected = p;
+    input.value = p.name;
+    dd.style.display = 'none';
+    document.getElementById('loginSelectedName').textContent = p.name;
+    document.getElementById('loginSelectedRole').textContent = p.role;
+    document.getElementById('loginSelectedBox').style.display = 'block';
+    document.getElementById('loginBtn').disabled = false;
+  };
+
+  document.addEventListener('mousedown', e => {
+    if (!input.contains(e.target) && !dd.contains(e.target)) dd.style.display = 'none';
+  });
+  input.onkeydown = e => { if (e.key === 'Escape') dd.style.display = 'none'; };
+
+  // Pre-fill if remembered
+  const savedKey = localStorage.getItem('hqDashUser');
+  if (savedKey) {
+    // Will be re-resolved after people are loaded
+    localStorage.setItem('_pendingLoginKey', savedKey);
+  }
+}
+
+function _resolveSavedLogin() {
+  const savedKey = localStorage.getItem('_pendingLoginKey') || localStorage.getItem('hqDashUser');
+  if (!savedKey || !_loginPeople.length) return;
+  const p = _loginPeople.find(x => (x.email || '__svp__' + x.name) === savedKey || x.email === savedKey);
+  if (p) {
+    const input = document.getElementById('loginInput');
+    input.value = p.name;
+    _loginSelected = p;
+    document.getElementById('loginSelectedName').textContent = p.name;
+    document.getElementById('loginSelectedRole').textContent = p.role;
+    document.getElementById('loginSelectedBox').style.display = 'block';
+    document.getElementById('loginBtn').disabled = false;
+  }
+}
+
+async function confirmLogin() {
+  if (!_loginSelected) return;
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Loading…';
+  document.getElementById('loginStatus').textContent = '⟳ Loading your settings…';
+
+  S.user = _loginSelected;
+  const userKey = _loginSelected.email || '__svp__' + _loginSelected.name;
+  localStorage.setItem('hqDashUser', userKey);
+
+  _applyUserScope();
+  _updateTopbarUser();
+
+  const email = _loginSelected.email || '';
+  if (email && S.apiUrl) {
+    try {
+      const [thrRes, prefsRes] = await Promise.all([
+        fetch(`${S.apiUrl}?action=getThresholds&email=${encodeURIComponent(email)}&_=${Date.now()}`),
+        fetch(`${S.apiUrl}?action=getUserPrefs&email=${encodeURIComponent(email)}&_=${Date.now()}`)
+      ]);
+      const td = await thrRes.json(), pd = await prefsRes.json();
+      if (td.ok && td.thresholds) S.thresholds = Object.assign({}, S.thresholds, td.thresholds);
+      if (pd.ok && pd.prefs) _applyPrefs(pd.prefs);
+    } catch(e) {}
+  }
+
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('loginStatus').textContent = '';
+  btn.disabled = false; btn.textContent = 'Enter Dashboard →';
+
+  if (S.stores.length) { applyFilters(); render(); }
+  toast(`Welcome, ${_loginSelected.name.split(' ')[0]}`, 'ok');
+}
+
+function showLoginScreen() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginInput').focus();
+}
+
+// ─── Scope filter based on user role ─────────────────────────────
+function _applyUserScope() {
+  const scope = S.user;
+  if (!scope) return;
+
+  ['filterRegion','filterArea','filterRvp','filterGm','filterDm'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+
+  const role = (scope.role || '').toUpperCase();
+
+  if (role.startsWith('SVP')) {
+    // Marc sees all his stores — handled via svpStoreIds filter in applyFilters
+    return;
+  }
+  if (role === 'RVP' && scope.email) {
+    const el = document.getElementById('filterRvp');
+    if (el) el.value = scope.email.toLowerCase();
+    _rebuildGmDropdown(); _rebuildDmDropdown();
+  } else if (role === 'GM' && scope.email) {
+    const el = document.getElementById('filterGm');
+    if (el) el.value = scope.email.toLowerCase();
+    _rebuildDmDropdown();
+  } else if (role === 'DM' && scope.email) {
+    const el = document.getElementById('filterDm');
+    if (el) el.value = scope.email.toLowerCase();
+  }
+}
+
+function _updateTopbarUser() {
+  if (!S.user) return;
+  const av = document.getElementById('topbarAvatar');
+  const nm = document.getElementById('topbarName');
+  const initials = S.user.name.split(' ').map(w=>w[0]).slice(0,2).join('');
+  if (av) av.textContent = initials;
+  if (nm) nm.textContent = S.user.name.split(' ')[0];
+}
+
+// ═══════════════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', async () => {
+  initLogin();
+
+  const savedUrl = localStorage.getItem('hqDashboardUrl') || HQ_URL;
+  const savedThr = localStorage.getItem('hqThresholds');
+  if (savedThr) try { S.thresholds = Object.assign({}, S.thresholds, JSON.parse(savedThr)); } catch(e) {}
+
+  S.apiUrl = savedUrl;
+  document.getElementById('app').classList.add('ready');
+
+  // Load leadership people for login screen
+  await loadLoginPeople();
+
+  // Check if we have a remembered user and resolve it
+  const savedUserKey = localStorage.getItem('hqDashUser');
+  if (savedUserKey && _loginPeople.length) {
+    const p = _loginPeople.find(x => (x.email || '__svp__' + x.name) === savedUserKey || x.email === savedUserKey);
+    if (p) {
+      S.user = p;
+      S.svpStoreIds = p.svpStoreIds || S.svpStoreIds;
+      _updateTopbarUser();
+      _resolveSavedLogin();
+    }
+  }
+
+  if (!savedUrl) {
+    showSetup();
+  } else {
+    hideSetup();
+    loadData();
+  }
+
+  // Show login if no remembered user
+  if (!S.user) {
+    setTimeout(() => {
+      document.getElementById('loginScreen').style.display = 'flex';
+      setTimeout(() => document.getElementById('loginInput')?.focus(), 100);
+    }, 400);
+  }
+});
+
+function showSetup() {
+  document.getElementById('setupPane').style.display = 'flex';
+  document.getElementById('pane-overview').classList.remove('active');
+}
+function hideSetup() {
+  document.getElementById('setupPane').style.display = 'none';
+  document.getElementById('pane-overview').classList.add('active');
+}
+function saveSetup() {
+  const url = document.getElementById('setupUrl').value.trim() || HQ_URL;
+  localStorage.setItem('hqDashboardUrl', url);
+  S.apiUrl = url;
+  hideSetup();
+  loadData();
+}
+
+// ═══════════════════════════════════════════════════════
+//  DATA LOADING
+// ═══════════════════════════════════════════════════════
+async function loadData() {
+  toast('⟳ Loading…');
+  try {
+    const [storesRes, dirRes] = await Promise.all([
+      fetch(`${S.apiUrl}?action=getAllStores&_=${Date.now()}`),
+      fetch(`${S.apiUrl}?action=getStoreDirectory&_=${Date.now()}`)
+    ]);
+    const sd = await storesRes.json();
+    const dd = await dirRes.json();
+    if (!sd.ok) throw new Error(sd.error || 'API error');
+
+    S.stores = sd.stores || [];
+
+    // Directory comes from AppScript (getStoreDirectory)
+    if (dd.status === 'ok') {
+      S.directory = dd.data || [];
+      S.dirById   = {};
+      S.directory.forEach(s => { S.dirById[String(s.id)] = s; });
+      // Pick up SVP store IDs if returned with directory
+      if (dd.svpStoreIds && dd.svpStoreIds.length) S.svpStoreIds = dd.svpStoreIds;
+      // Update login people with fresh emails if leadership returned
+      if (dd.leadership && dd.leadership.length) _mergeFreshLeadership(dd.leadership);
+    }
+
+    // Compute prev-week hours for Δ column
+    _buildPrevWeekMap();
+
+    S.lastLoaded = new Date();
+    _updateRefreshTs();
+
+    populateFilters();
+    if (S.user) _applyUserScope();
+    applyFilters();
+    populateSideSelects();
+    render();
+    toast(`✅ ${S.stores.length} stores loaded`, 'ok');
+    if (S.user?.email && S.apiUrl) _silentLoadUserSettings(S.user.email);
+  } catch(e) {
+    toast(`❌ ${e.message}`, 'error');
+  }
+}
+
+function _mergeFreshLeadership(fresh) {
+  // If we already loaded people, refresh their emails from the fresh directory data
+  fresh.forEach(fp => {
+    const existing = _loginPeople.find(p => p.name === fp.name);
+    if (existing && fp.email) existing.email = fp.email;
+    else if (!existing) _loginPeople.push(fp);
+  });
+}
+
+function _buildPrevWeekMap() {
+  // Build map of storeId → hours for the second-most-recent weekOf
+  const weeks = [...new Set(S.stores.map(s=>s.weekOf).filter(Boolean))].sort();
+  if (weeks.length < 2) { S.prevWeekStores = {}; return; }
+  const prevWeek = weeks[weeks.length - 2];
+  S.prevWeekStores = {};
+  S.stores.filter(s=>s.weekOf===prevWeek).forEach(s => {
+    S.prevWeekStores[String(s.storeId)] = Number(s.totalHours||0);
+  });
+}
+
+function _updateRefreshTs() {
+  const el = document.getElementById('refreshTs');
+  if (!el || !S.lastLoaded) return;
+  el.textContent = `${S.lastLoaded.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
+}
+
+function refresh() { loadData(); }
+
+// ═══════════════════════════════════════════════════════
+//  DEADLINE BANNER
+// ═══════════════════════════════════════════════════════
+function _updateDeadlineBanner() {
+  const banner = document.getElementById('deadlineBanner');
+  if (!banner) return;
+
+  const week = document.getElementById('filterWeek')?.value;
+  if (!week) { banner.classList.remove('show'); return; }
+
+  // Count missing stores for selected week
+  const submittedIds = new Set(S.stores.filter(s=>s.weekOf===week).map(s=>String(s.storeId)));
+  const totalDirForScope = _scopedDirectoryStores();
+  const missingCount = totalDirForScope.filter(s => !submittedIds.has(String(s.id))).length;
+
+  if (missingCount === 0) { banner.classList.remove('show'); return; }
+
+  // Days until next submission deadline (deadlineDay = 0-6 day of week)
+  const deadlineDay = Number(S.thresholds.deadlineDay ?? 4);
+  const now = new Date();
+  const today = now.getDay();
+  let daysUntil = (deadlineDay - today + 7) % 7;
+  if (daysUntil === 0) daysUntil = 7; // if today is deadline, show next week's
+
+  const urgencyColor = daysUntil <= 1 ? 'var(--red)' : daysUntil <= 3 ? 'var(--amber)' : 'var(--text2)';
+
+  banner.innerHTML = `⏰ <strong>${missingCount}</strong> store${missingCount>1?'s':''} have not submitted for week of <strong>${week}</strong> · Deadline in <strong style="color:${urgencyColor}">${daysUntil} day${daysUntil!==1?'s':''}</strong>`;
+  banner.classList.add('show');
+}
+
+// ═══════════════════════════════════════════════════════
+//  FILTERS — HIERARCHICAL
+// ═══════════════════════════════════════════════════════
+function populateFilters() {
+  const dir = S.directory.length ? S.directory : [];
+
+  // Weeks
+  const weeks = [...new Set(S.stores.map(s=>s.weekOf).filter(Boolean))].sort().reverse();
+  const wf = document.getElementById('filterWeek');
+  if (wf) {
+    wf.innerHTML = '<option value="">All Weeks</option>' +
+      weeks.map(w => `<option value="${w}">${w}</option>`).join('');
+    const cur = getCurrentWeekSunday();
+    if (weeks.includes(cur)) wf.value = cur;
+  }
+
+  // Regions from directory
+  const regions = [...new Set(dir.map(s=>s.region).filter(Boolean))].sort();
+  const rf = document.getElementById('filterRegion');
+  if (rf) {
+    rf.innerHTML = '<option value="">All Regions</option>' +
+      regions.map(r => `<option value="${r}">${r}</option>`).join('');
+  }
+
+  _rebuildRvpDropdown();
+  _rebuildGmDropdown();
+  _rebuildDmDropdown();
+}
+
+function _dirFiltered() {
+  const region = document.getElementById('filterRegion')?.value || '';
+  const area   = document.getElementById('filterArea')?.value   || '';
+  return S.directory.filter(s => (!region || s.region===region) && (!area || s.area===area));
+}
+
+function _rebuildRvpDropdown() {
+  const sel = document.getElementById('filterRvp'); if (!sel) return;
+  const cur = sel.value;
+  const map = new Map();
+  _dirFiltered().forEach(s => { if (s.rvp && s.rvpEmail) map.set(s.rvpEmail.toLowerCase(), s.rvp); });
+  sel.innerHTML = '<option value="">All RVPs</option>' +
+    [...map.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([e,n])=>`<option value="${e}">${n}</option>`).join('');
+  if ([...sel.options].some(o=>o.value===cur)) sel.value=cur;
+}
+function _rebuildGmDropdown() {
+  const sel = document.getElementById('filterGm'); if (!sel) return;
+  const cur = sel.value;
+  const rvp = (document.getElementById('filterRvp')?.value||'').toLowerCase();
+  const map = new Map();
+  _dirFiltered().filter(s=>!rvp||(s.rvpEmail||'').toLowerCase()===rvp)
+    .forEach(s => { if (s.gm && s.gmEmail) map.set(s.gmEmail.toLowerCase(), s.gm); });
+  sel.innerHTML = '<option value="">All GMs</option>' +
+    [...map.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([e,n])=>`<option value="${e}">${n}</option>`).join('');
+  if ([...sel.options].some(o=>o.value===cur)) sel.value=cur;
+}
+function _rebuildDmDropdown() {
+  const sel = document.getElementById('filterDm'); if (!sel) return;
+  const cur = sel.value;
+  const rvp = (document.getElementById('filterRvp')?.value||'').toLowerCase();
+  const gm  = (document.getElementById('filterGm')?.value ||'').toLowerCase();
+  const map = new Map();
+  _dirFiltered()
+    .filter(s => (!rvp||(s.rvpEmail||'').toLowerCase()===rvp) && (!gm||(s.gmEmail||'').toLowerCase()===gm))
+    .forEach(s => { if (s.dm && s.dmEmail) map.set(s.dmEmail.toLowerCase(), s.dm); });
+  sel.innerHTML = '<option value="">All DMs</option>' +
+    [...map.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([e,n])=>`<option value="${e}">${n}</option>`).join('');
+  if ([...sel.options].some(o=>o.value===cur)) sel.value=cur;
+}
+
+function onRegionChange() {
+  const reg = document.getElementById('filterRegion').value;
+  const areas = [...new Set(S.directory.filter(s=>!reg||s.region===reg).map(s=>s.area).filter(Boolean))].sort();
+  const af = document.getElementById('filterArea');
+  af.innerHTML = '<option value="">All Areas</option>' + areas.map(a=>`<option value="${a}">${a}</option>`).join('');
+  ['filterRvp','filterGm','filterDm'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  _rebuildRvpDropdown(); _rebuildGmDropdown(); _rebuildDmDropdown();
+  applyFilters();
+}
+function onAreaChange() {
+  ['filterRvp','filterGm','filterDm'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  _rebuildRvpDropdown(); _rebuildGmDropdown(); _rebuildDmDropdown();
+  applyFilters();
+}
+function onRvpChange() {
+  ['filterGm','filterDm'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  _rebuildGmDropdown(); _rebuildDmDropdown();
+  applyFilters();
+}
+function onGmChange() {
+  const dm=document.getElementById('filterDm'); if(dm) dm.value='';
+  _rebuildDmDropdown();
+  applyFilters();
+}
+
+function applyFilters() {
+  const region  = document.getElementById('filterRegion')?.value || '';
+  const area    = document.getElementById('filterArea')?.value   || '';
+  const week    = document.getElementById('filterWeek')?.value   || '';
+  const storeQ  = (document.getElementById('filterStore')?.value||'').trim();
+  const rvpE    = (document.getElementById('filterRvp')?.value   ||'').toLowerCase();
+  const gmE     = (document.getElementById('filterGm')?.value    ||'').toLowerCase();
+  const dmE     = (document.getElementById('filterDm')?.value    ||'').toLowerCase();
+
+  const isSvp   = S.user && (S.user.role||'').toUpperCase().startsWith('SVP');
+  const svpSet  = isSvp ? new Set(S.svpStoreIds.map(String)) : null;
+
+  S.filtered = S.stores.filter(s => {
+    const sid = String(s.storeId);
+    // SVP: only see their assigned stores
+    if (svpSet && !svpSet.has(sid)) return false;
+
+    if (region && s.region !== region) return false;
+    if (area   && s.area   !== area)   return false;
+    if (week   && s.weekOf !== week)   return false;
+    if (storeQ && !sid.startsWith(storeQ)) return false;
+    if (rvpE || gmE || dmE) {
+      const gs = S.dirById[sid];
+      if (!gs) return false;
+      if (rvpE && (gs.rvpEmail||'').toLowerCase() !== rvpE) return false;
+      if (gmE  && (gs.gmEmail||'').toLowerCase()  !== gmE)  return false;
+      if (dmE  && (gs.dmEmail||'').toLowerCase()  !== dmE)  return false;
+    }
+    return true;
+  });
+
+  render();
+  if (S.currentPane === 'directory') renderDirectory();
+}
+
+// Scoped directory stores (respects all active filters + SVP)
+function _scopedDirectoryStores() {
+  const region  = document.getElementById('filterRegion')?.value || '';
+  const area    = document.getElementById('filterArea')?.value   || '';
+  const rvpE    = (document.getElementById('filterRvp')?.value   ||'').toLowerCase();
+  const gmE     = (document.getElementById('filterGm')?.value    ||'').toLowerCase();
+  const dmE     = (document.getElementById('filterDm')?.value    ||'').toLowerCase();
+  const isSvp   = S.user && (S.user.role||'').toUpperCase().startsWith('SVP');
+  const svpSet  = isSvp ? new Set(S.svpStoreIds.map(String)) : null;
+
+  const seen = new Set();
+  return S.directory.filter(s => {
+    if (seen.has(s.id)) return false;
+    seen.add(s.id);
+    if (svpSet && !svpSet.has(String(s.id))) return false;
+    if (region && s.region !== region) return false;
+    if (area   && s.area   !== area)   return false;
+    if (rvpE   && (s.rvpEmail||'').toLowerCase() !== rvpE) return false;
+    if (gmE    && (s.gmEmail||'').toLowerCase()  !== gmE)  return false;
+    if (dmE    && (s.dmEmail||'').toLowerCase()  !== dmE)  return false;
+    return true;
+  });
+}
+
+function populateSideSelects() {
+  const rs = document.getElementById('rosterStore');
+  if (rs) {
+    rs.innerHTML = '<option value="">All Stores</option>' +
+      S.stores.map(s=>`<option value="${s.storeId}">Store ${s.storeId}</option>`).join('');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  RENDER ORCHESTRATOR
+// ═══════════════════════════════════════════════════════
+function render() {
+  _renderTopContext();
+  renderSubmissionProgress();
+  renderKPIs();
+  renderStoreGroups();
+  renderSidebarStores();
+  _updateAlertBadge();
+  _updateDeadlineBanner();
+}
+
+function _renderTopContext() {
+  const ctx = document.getElementById('topContext');
+  if (!ctx) return;
+  const week = document.getElementById('filterWeek')?.value;
+  const weekLabel = week ? `Week of ${week}` : 'All Weeks';
+  ctx.innerHTML = `<span>${weekLabel}</span> · <span>${S.filtered.length} stores</span>`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  SUBMISSION PROGRESS BAR  (Feature #1)
+// ═══════════════════════════════════════════════════════
+function renderSubmissionProgress() {
+  const el = document.getElementById('submitProgressBar');
+  if (!el) return;
+
+  const week = document.getElementById('filterWeek')?.value;
+  if (!week) { el.innerHTML = ''; return; }
+
+  const submittedIds = new Set(S.stores.filter(s=>s.weekOf===week).map(s=>String(s.storeId)));
+  const scopedDir    = _scopedDirectoryStores();
+  const total        = scopedDir.length;
+  const submitted    = scopedDir.filter(s => submittedIds.has(String(s.id))).length;
+  const missing      = total - submitted;
+  const pct          = total > 0 ? Math.round((submitted/total)*100) : 0;
+
+  const barColor = pct >= 95 ? 'var(--green)' : pct >= 80 ? 'var(--amber)' : 'var(--red)';
+  const pctColor = pct >= 95 ? 'var(--green)' : pct >= 80 ? 'var(--amber)' : 'var(--red)';
+
+  el.innerHTML = `
+    <div class="submit-progress-wrap">
+      <div class="submit-progress-label">Submission Rate</div>
+      <div class="submit-progress-bar-outer">
+        <div class="submit-progress-bar-inner" style="width:${pct}%;background:${barColor}"></div>
+      </div>
+      <div class="submit-progress-pct" style="color:${pctColor}">${pct}%</div>
+      <div class="submit-progress-detail">${submitted} / ${total} · <span style="color:var(--red)">${missing} missing</span></div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  KPIs
+// ═══════════════════════════════════════════════════════
+function renderKPIs() {
+  const stores = S.filtered;
+  const total  = stores.length;
+  const hc     = stores.reduce((a,s) => a + Number(s.headcount||0), 0);
+  const hrs    = stores.reduce((a,s) => a + Number(s.totalHours||0), 0);
+  const budget = stores.reduce((a,s) => a + _getBudget(s), 0);
+  const pct    = budget > 0 ? Math.round((hrs/budget)*100) : 0;
+  const flagged= stores.filter(s => _isCrit(s)).length;
+
+  const week   = document.getElementById('filterWeek')?.value;
+  const scopedDir = _scopedDirectoryStores();
+  const submittedIds = new Set(S.stores.filter(s => !week || s.weekOf===week).map(s=>String(s.storeId)));
+  const totalDir = scopedDir.length;
+  const missingCount = Math.max(0, totalDir - [...submittedIds].filter(id => scopedDir.some(s=>String(s.id)===id)).length);
+
+  document.getElementById('kpiStrip').innerHTML = `
+    <div class="kpi c-red">
+      <div class="kpi-lbl">Stores Loaded</div>
+      <div class="kpi-val">${total}</div>
+      <div class="kpi-sub">${totalDir} in scope</div>
+    </div>
+    <div class="kpi c-amber">
+      <div class="kpi-lbl">Not Submitted</div>
+      <div class="kpi-val" style="color:${missingCount>0?'var(--red)':'var(--green)'}">${missingCount}</div>
+      <div class="kpi-sub">for selected week</div>
+    </div>
+    <div class="kpi c-green">
+      <div class="kpi-lbl">Headcount</div>
+      <div class="kpi-val">${hc.toLocaleString()}</div>
+      <div class="kpi-sub">across ${total} stores</div>
+    </div>
+    <div class="kpi c-blue">
+      <div class="kpi-lbl">Scheduled Hrs</div>
+      <div class="kpi-val">${hrs.toLocaleString()}</div>
+      <div class="kpi-sub">${week || 'all weeks'}</div>
+    </div>
+    <div class="kpi ${pct>100?'c-red':pct>85?'c-amber':'c-green'}">
+      <div class="kpi-lbl">Budget Util</div>
+      <div class="kpi-val">${pct}%</div>
+      <div class="kpi-sub">${hrs.toLocaleString()} / ${budget.toLocaleString()} hrs</div>
+    </div>
+    <div class="kpi ${flagged>0?'c-red':'c-green'}">
+      <div class="kpi-lbl">Flagged</div>
+      <div class="kpi-val">${flagged}</div>
+      <div class="kpi-sub">${flagged?'need attention':'all clear ✓'}</div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════
+//  STORE GROUPS — TABLE FORMAT  (Feature #2: Δ Hrs column)
+// ═══════════════════════════════════════════════════════
+function renderStoreGroups() {
+  const container = document.getElementById('storeGroups');
+  if (!container) return;
+
+  const byRegion = _groupBy(S.filtered, 'region');
+  let html = '';
+
+  Object.keys(byRegion).sort().forEach(region => {
+    const rStores = byRegion[region];
+    const rHrs = rStores.reduce((a,s)=>a+Number(s.totalHours||0),0);
+    const rHC  = rStores.reduce((a,s)=>a+Number(s.headcount||0),0);
+    const byDistrict = _groupBy(rStores, s => s.district || s.area || 'Unassigned');
+
+    html += `
+      <div class="group-hdr" onclick="toggleGroup(this)">
+        <span style="font-size:.9rem">📍</span>
+        <span class="group-hdr-title">${region || 'Unassigned'}</span>
+        <div class="group-hdr-stats">
+          <span class="group-stat"><strong>${rStores.length}</strong> stores</span>
+          <span class="group-stat"><strong>${rHC}</strong> staff</span>
+          <span class="group-stat"><strong>${rHrs.toLocaleString()}</strong> hrs</span>
+        </div>
+        <span class="group-chevron">▾</span>
+      </div>
+      <div class="group-body">`;
+
+    Object.keys(byDistrict).sort().forEach(district => {
+      const dStores = byDistrict[district];
+      const dHrs = dStores.reduce((a,s)=>a+Number(s.totalHours||0),0);
+      const dHC  = dStores.reduce((a,s)=>a+Number(s.headcount||0),0);
+
+      html += `
+        <div style="padding:4px 0 4px 12px;margin-bottom:4px">
+          <div style="font-size:.7rem;font-weight:600;color:var(--text2);letter-spacing:.04em;padding:4px 8px;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--border)">
+            <span style="color:var(--text)">📌 ${district}</span>
+            <span>${dStores.length} stores · ${dHC} staff · ${dHrs.toLocaleString()} hrs</span>
+          </div>
+        </div>
+        <div class="status-table-wrap" style="margin:0 0 10px 12px">
+          <table class="status-table">
+            <thead><tr>
+              <th style="min-width:170px">Store</th>
+              <th>Status</th>
+              <th>Manager</th>
+              <th>DM</th>
+              <th>Headcount</th>
+              <th>Sched Hrs</th>
+              <th>Δ Hrs</th>
+              <th>Budget</th>
+              <th>Util%</th>
+              <th>Week</th>
+              <th>Synced</th>
+            </tr></thead>
+            <tbody>
+              ${dStores.sort((a,b)=>Number(a.storeId)-Number(b.storeId)).map(s=>storeRowHTML(s)).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    });
+    html += `</div>`;
+  });
+
+  container.innerHTML = html || `<div class="empty"><div class="empty-icon">🏪</div><div class="empty-title">No stores match filters</div></div>`;
+}
+
+function storeRowHTML(s) {
+  const hrs    = Number(s.totalHours || 0);
+  const budget = _getBudget(s);
+  const hc     = Number(s.headcount  || 0);
+  const pct    = budget > 0 ? Math.round((hrs/budget)*100) : 0;
+  const stale  = _isStale(s);
+  const under  = _isUnder(s);
+  const over   = _isOver(s);
+  const gs     = S.dirById[String(s.storeId)] || {};
+
+  const statusPill = stale
+    ? `<span class="status-pill sp-gray">⚠ Stale</span>`
+    : over ? `<span class="status-pill sp-red">↑ Over</span>`
+    : under ? `<span class="status-pill sp-amber">↓ Low</span>`
+    : hrs === 0 ? `<span class="status-pill sp-gray">— Empty</span>`
+    : `<span class="status-pill sp-green">✓ OK</span>`;
+
+  const fillColor = over ? 'var(--red)' : under ? 'var(--amber)' : 'var(--green)';
+  const pctDisplay = budget > 0
+    ? `<div class="hours-mini"><div class="hours-bar-mini"><div class="hours-fill-mini" style="width:${Math.min(pct,100)}%;background:${fillColor}"></div></div><span class="pct-cell" style="color:${over?'var(--red)':under?'var(--amber)':'var(--text2)'}">${pct}%</span></div>`
+    : `<span class="pct-cell" style="color:var(--text3)">—</span>`;
+
+  const deptCount = (s.departments && s.departments.length > 1)
+    ? `<span class="status-pill sp-blue" style="margin-left:4px">${s.departments.length}d</span>` : '';
+
+  // Δ Hrs vs prior week
+  const prevHrs = S.prevWeekStores[String(s.storeId)];
+  let deltaHtml = '<span class="delta flat">—</span>';
+  if (prevHrs !== undefined && hrs > 0) {
+    const diff = hrs - prevHrs;
+    if (Math.abs(diff) >= 1) {
+      const cls = diff > 0 ? 'up' : 'down';
+      const sign = diff > 0 ? '+' : '';
+      deltaHtml = `<span class="delta ${cls}">${sign}${diff.toFixed(0)}</span>`;
+    } else {
+      deltaHtml = '<span class="delta flat">±0</span>';
+    }
+  }
+
+  return `<tr class="click-row" onclick="openDetail('${s.storeId}')">
+    <td>
+      <div class="store-id-cell">
+        <span class="store-id-num">${s.storeId}</span>
+        <div>
+          <div style="font-size:.75rem;font-weight:500">${_shortName(s.storeName)}${deptCount}</div>
+          <div class="store-city">${gs.city||s.city||''}, ${gs.state||s.state||''}</div>
+        </div>
+      </div>
+    </td>
+    <td>${statusPill}</td>
+    <td><div style="font-size:.73rem">${gs.manager||'—'}</div></td>
+    <td><div style="font-size:.73rem;color:var(--text2)">${gs.dm||'—'}</div></td>
+    <td class="num-cell">${hc||'—'}</td>
+    <td class="num-cell">${hrs||'—'}</td>
+    <td>${deltaHtml}</td>
+    <td class="num-cell" style="color:var(--text2)">${budget||'—'}</td>
+    <td>${pctDisplay}</td>
+    <td style="font-family:var(--mono);font-size:.68rem;color:var(--text2)">${s.weekOf||'—'}</td>
+    <td style="font-family:var(--mono);font-size:.65rem;color:var(--text3)">${s.lastPushed?timeAgo(s.lastPushed):'—'}</td>
+  </tr>`;
+}
+
+function toggleGroup(hdr) {
+  hdr.classList.toggle('collapsed');
+  const body = hdr.nextElementSibling;
+  if (body) body.style.display = hdr.classList.contains('collapsed') ? 'none' : '';
+}
+
+// ═══════════════════════════════════════════════════════
+//  SIDEBAR STORES
+// ═══════════════════════════════════════════════════════
+function renderSidebarStores() {
+  const el = document.getElementById('sidebarStores');
+  if (!el) return;
+  el.innerHTML = S.filtered.map(s => {
+    const color = _isStale(s)?'var(--text3)':_isOver(s)?'var(--red)':_isUnder(s)?'var(--amber)':'var(--green)';
+    return `<div class="mini-store" onclick="openDetail('${s.storeId}')">
+      <div class="mini-dot" style="background:${color}"></div>
+      <span class="mini-id">${s.storeId}</span>
+      <span style="font-size:.68rem;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_shortName(s.storeName,12)}</span>
+      <span class="mini-hrs">${Number(s.totalHours||0)}h</span>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+//  DIRECTORY — with Chase button  (Feature #4)
+// ═══════════════════════════════════════════════════════
+function renderDirectory() {
+  const q       = (document.getElementById('dirSearch')?.value||'').toLowerCase();
+  const status  = document.getElementById('dirStatus')?.value || '';
+  const region  = document.getElementById('filterRegion')?.value || '';
+  const area    = document.getElementById('filterArea')?.value   || '';
+  const rvpE    = (document.getElementById('filterRvp')?.value   ||'').toLowerCase();
+  const gmE     = (document.getElementById('filterGm')?.value    ||'').toLowerCase();
+  const dmE     = (document.getElementById('filterDm')?.value    ||'').toLowerCase();
+  const week    = document.getElementById('filterWeek')?.value   || '';
+  const isSvp   = S.user && (S.user.role||'').toUpperCase().startsWith('SVP');
+  const svpSet  = isSvp ? new Set(S.svpStoreIds.map(String)) : null;
+
+  const submittedIds = new Set(S.stores.filter(s => !week || s.weekOf === week).map(s=>String(s.storeId)));
+
+  const seen = new Set();
+  const rows = S.directory.filter(s => {
+    const key = String(s.id);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    if (svpSet && !svpSet.has(key)) return false;
+    if (region && s.region !== region) return false;
+    if (area   && s.area   !== area)   return false;
+    if (rvpE   && (s.rvpEmail||'').toLowerCase() !== rvpE) return false;
+    if (gmE    && (s.gmEmail||'').toLowerCase()  !== gmE)  return false;
+    if (dmE    && (s.dmEmail||'').toLowerCase()  !== dmE)  return false;
+    const submitted = submittedIds.has(key);
+    if (status === 'submitted' && !submitted) return false;
+    if (status === 'missing'   &&  submitted) return false;
+    if (q && !`${s.id} ${s.name} ${s.city} ${s.manager} ${s.dm} ${s.gm} ${s.rvp}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const submitted = rows.filter(s => submittedIds.has(String(s.id))).length;
+  const missing   = rows.length - submitted;
+
+  document.getElementById('dirSummaryBar').innerHTML =
+    `<span><strong>${rows.length}</strong> stores</span>` +
+    `<span style="color:var(--green)"><strong>${submitted}</strong> submitted</span>` +
+    `<span style="color:var(--red)"><strong>${missing}</strong> missing</span>` +
+    (week ? `<span>for week <strong>${week}</strong></span>` : '');
+
+  const tbody = document.getElementById('dirBody');
+  tbody.innerHTML = rows.sort((a,b)=>Number(a.id)-Number(b.id)).map(s => {
+    const sub = submittedIds.has(String(s.id));
+    const badge = sub
+      ? `<span class="sub-badge sub-yes">✓</span>`
+      : `<span class="sub-badge sub-no">✗</span>`;
+    const submittedStore = S.stores.find(x=>String(x.storeId)===String(s.id));
+    const weekOf = submittedStore?.weekOf || '';
+
+    // Chase button: only show for missing stores with a manager email
+    const chaseBtn = (!sub && s.managerEmail && week)
+      ? `<button class="btn-chase" onclick="event.stopPropagation();chaseStore('${s.managerEmail}','${s.id}','${s.name.replace(/'/g,"\\'")}','${week}')">✉ Chase</button>`
+      : '';
+
+    return `<tr onclick="openDetail('${s.id}')" style="cursor:pointer">
+      <td class="num-cell">${s.id}</td>
+      <td><div style="font-weight:500">${_shortName(s.name,22)}</div><div class="dir-sub">${s.phone||''}</div></td>
+      <td><div>${s.city}</div><div class="dir-sub">${s.state}</div></td>
+      <td><div>${s.manager||'—'}</div></td>
+      <td><div style="color:var(--text2)">${s.dm||'—'}</div></td>
+      <td><div style="color:var(--text2)">${s.gm||'—'}</div></td>
+      <td><div style="color:var(--text2);font-size:.7rem">${s.rvp||'—'}</div></td>
+      <td>${badge}</td>
+      <td style="font-family:var(--mono);font-size:.65rem;color:var(--text3)">${weekOf||'—'}</td>
+      <td>${chaseBtn}</td>
+    </tr>`;
+  }).join('');
+}
+
+// Chase a single store manager  (Feature #4)
+function chaseStore(email, storeId, storeName, week) {
+  const subject = encodeURIComponent(`Schedule Reminder — Store ${storeId} — Week of ${week}`);
+  const body    = encodeURIComponent(`Hi,\n\nThis is a reminder that your schedule for Store ${storeId} (${storeName}) for the week of ${week} has not been submitted yet.\n\nPlease log in to the scheduler and submit your schedule as soon as possible.\n\nThank you.`);
+  window.open(`mailto:${email}?subject=${subject}&body=${body}`);
+  toast(`✉ Draft opened for Store ${storeId}`, 'ok');
+}
+
+function emailMissingFiltered() {
+  const week = document.getElementById('filterWeek')?.value || '';
+  if (!week) { toast('Select a week first', 'warn'); return; }
+  const submittedIds = new Set(S.stores.filter(s=>s.weekOf===week).map(s=>String(s.storeId)));
+  const scopedDir = _scopedDirectoryStores();
+
+  const missing = scopedDir.filter(s => !submittedIds.has(String(s.id)) && s.managerEmail);
+  if (!missing.length) { toast('No missing stores with email addresses', 'ok'); return; }
+  const emails = [...new Set(missing.map(s=>s.managerEmail).filter(Boolean))];
+  window.open(`mailto:${emails.join(',')}?subject=Schedule%20Submission%20Reminder%20—%20Week%20of%20${week}&body=Please%20submit%20your%20schedule%20for%20the%20week%20of%20${week}.`);
+  toast(`✅ Draft email opened for ${emails.length} managers`, 'ok');
+}
+
+// ═══════════════════════════════════════════════════════
+//  ROSTER
+// ═══════════════════════════════════════════════════════
+function renderRoster() {
+  const storeF = document.getElementById('rosterStore')?.value || '';
+  const stores = storeF ? S.stores.filter(s=>String(s.storeId)===storeF) : S.filtered;
+  const rows = [];
+
+  stores.forEach(s => {
+    const p = s.payload;
+    if (!p) return;
+    const noCount = _noCountSet(p.codes||[]);
+    const sh = _slotHours(p.schedule||{});
+    const billable = (dayMap) => dayMap ? Object.values(dayMap).filter(c=>!noCount.has(c)).length : 0;
+    (p.teamMembers||[]).forEach(m => {
+      const dayHrs = DAYS.map(d => { const n=billable(p.schedule?.[d]?.[m]); return n>0?(n*sh).toFixed(1):'—'; });
+      const total  = DAYS.reduce((a,d)=>a+billable(p.schedule?.[d]?.[m]),0);
+      rows.push({ sid:s.storeId, name:m, title:p.titles?.[m]||'', isMgr:!!p.managers?.[m], dayHrs, total:(total*sh).toFixed(1) });
+    });
+  });
+
+  document.getElementById('rosterBody').innerHTML = rows.map(r =>
+    `<tr>
+      <td style="font-family:var(--mono);font-size:.72rem">${r.sid}</td>
+      <td><strong>${r.name}</strong></td>
+      <td style="color:var(--text2)">${r.title||'—'}</td>
+      <td>${r.isMgr?`<span class="status-pill sp-blue">Mgr</span>`:'—'}</td>
+      ${r.dayHrs.map(h=>`<td style="font-family:var(--mono);font-size:.72rem;color:${h==='—'?'var(--text3)':'var(--text)'}">${h}</td>`).join('')}
+      <td style="font-family:var(--mono);font-weight:500;color:var(--accent)">${r.total}</td>
+    </tr>`
+  ).join('') || `<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--text3)">No roster data</td></tr>`;
+}
+
+function exportRosterCSV() {
+  const storeF = document.getElementById('rosterStore')?.value||'';
+  const stores = storeF ? S.stores.filter(s=>String(s.storeId)===storeF) : S.filtered;
+  const rows = [['Store','Employee','Title','Manager?','Sun','Mon','Tue','Wed','Thu','Fri','Sat','Total Hrs','Week Of']];
+  stores.forEach(s => {
+    const p=s.payload; if(!p) return;
+    const noCount=_noCountSet(p.codes||[]); const sh=_slotHours(p.schedule||{});
+    const bl=(dm)=>dm?Object.values(dm).filter(c=>!noCount.has(c)).length:0;
+    (p.teamMembers||[]).forEach(m=>{
+      const dh=DAYS.map(d=>{const n=bl(p.schedule?.[d]?.[m]);return n>0?(n*sh).toFixed(1):'';});
+      const tot=DAYS.reduce((a,d)=>a+bl(p.schedule?.[d]?.[m]),0);
+      rows.push([s.storeId,m,p.titles?.[m]||'',p.managers?.[m]?'Yes':'', ...dh, (tot*sh).toFixed(1),s.weekOf||'']);
+    });
+  });
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`roster_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('✅ CSV exported');
+}
+
+// ═══════════════════════════════════════════════════════
+//  CHARTS
+// ═══════════════════════════════════════════════════════
+const CHART_OPT = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { labels: { color:'#7e8aab', font:{family:'Inter',size:10} } } },
+  scales: {
+    x: { ticks:{color:'#454e6b',font:{size:10}}, grid:{color:'rgba(255,255,255,.04)'} },
+    y: { ticks:{color:'#454e6b',font:{size:10}}, grid:{color:'rgba(255,255,255,.04)'} }
+  }
+};
+
+function renderCharts() {
+  const stores = S.filtered;
+  _buildBar('chartStoreHrs', stores.map(s=>`#${s.storeId}`),
+    [{ label:'Hrs', data:stores.map(s=>Number(s.totalHours||0)), backgroundColor:'rgba(224,38,26,.55)', borderColor:'#e0261a', borderWidth:1 },
+     { label:'Budget', data:stores.map(s=>_getBudget(s)), backgroundColor:'rgba(74,158,255,.2)', borderColor:'#4a9eff', borderWidth:1 }]);
+
+  const pcts = stores.map(s=>{ const b=_getBudget(s); return b>0?Math.round((Number(s.totalHours||0)/b)*100):0; });
+  _buildBar('chartBudget', stores.map(s=>`#${s.storeId}`),
+    [{ label:'Util%', data:pcts, backgroundColor:pcts.map(v=>v>100?'rgba(255,71,87,.6)':v>85?'rgba(245,166,35,.6)':'rgba(0,214,143,.6)'), borderWidth:0 }]);
+
+  const wm={};
+  S.stores.forEach(s=>{ const w=s.weekOf||'?'; if(!wm[w])wm[w]={hrs:0,hc:0}; wm[w].hrs+=Number(s.totalHours||0); wm[w].hc+=Number(s.headcount||0); });
+  const wks=Object.keys(wm).sort();
+  _buildLine('chartHrsWoW', wks, [{ label:'Hrs', data:wks.map(w=>wm[w].hrs), borderColor:'#e0261a', backgroundColor:'rgba(224,38,26,.08)', fill:true, tension:.3, pointRadius:3 }]);
+  _buildLine('chartHCWoW',  wks, [{ label:'HC',  data:wks.map(w=>wm[w].hc),  borderColor:'#00d68f', backgroundColor:'rgba(0,214,143,.08)',  fill:true, tension:.3, pointRadius:3 }]);
+}
+
+function _buildBar(id, labels, datasets) {
+  if (S.charts[id]) S.charts[id].destroy();
+  const ctx=document.getElementById(id)?.getContext('2d');
+  if (!ctx) return;
+  S.charts[id]=new Chart(ctx,{type:'bar',data:{labels,datasets},options:{...CHART_OPT}});
+}
+function _buildLine(id, labels, datasets) {
+  if (S.charts[id]) S.charts[id].destroy();
+  const ctx=document.getElementById(id)?.getContext('2d');
+  if (!ctx) return;
+  S.charts[id]=new Chart(ctx,{type:'line',data:{labels,datasets},options:{...CHART_OPT}});
+}
+
+// ═══════════════════════════════════════════════════════
+//  ALERTS — grouped by DM  (Feature #7)
+// ═══════════════════════════════════════════════════════
+function renderAlerts() {
+  const t=S.thresholds;
+  const red=[], amber=[], green=[];
+
+  S.filtered.forEach(s => {
+    const sid = `Store ${s.storeId}`;
+    const p   = s.payload || {};
+    const hrs = Number(s.totalHours||0);
+    const hc  = Number(s.headcount||0);
+    const budget = _getBudget(s);
+    const util   = budget>0?Math.round((hrs/budget)*100):null;
+    const sched  = p.schedule||{};
+    const members= p.teamMembers||[];
+    const managers=p.managers||{};
+    const noCount=_noCountSet(p.codes||[]);
+    const sh=_slotHours(sched);
+    const gs = S.dirById[String(s.storeId)] || {};
+
+    const dayHC = d => members.filter(m=>{
+      const slots=sched[d]?.[m]; return slots&&typeof slots==='object'&&!Array.isArray(slots)&&Object.keys(slots).length>0;
+    }).length;
+    const dayHasMgr = d => members.some(m=>managers[m]&&sched[d]?.[m]&&Object.keys(sched[d][m]||{}).length>0);
+
+    const meta = { storeId: s.storeId, dm: gs.dm || 'Unassigned DM', weekOf: s.weekOf };
+
+    if (hrs===0) { red.push({icon:'🚫',title:`${sid} — Empty`,desc:'No hours scheduled.',time:s.weekOf,...meta}); return; }
+
+    if (util!==null&&t.critUtilHigh>0&&util>t.critUtilHigh) red.push({icon:'💰',title:`${sid} — Over Budget`,desc:`${hrs}h = ${util}% of ${budget}h budget.`,time:s.weekOf,...meta});
+    if (util!==null&&t.critUtilLow>0&&util<t.critUtilLow)  red.push({icon:'📉',title:`${sid} — Critically Low`,desc:`${hrs}h = ${util}% (crit low: ${t.critUtilLow}%).`,time:s.weekOf,...meta});
+    if (t.maxHours>0&&hrs>t.maxHours) red.push({icon:'⏰',title:`${sid} — Exceeds Max`,desc:`${hrs}h > max ${t.maxHours}h.`,time:s.weekOf,...meta});
+    if (t.minHours>0&&hrs<t.minHours) red.push({icon:'⏱',title:`${sid} — Below Min`,desc:`${hrs}h < min ${t.minHours}h.`,time:s.weekOf,...meta});
+    if (t.minHC>0&&hc<t.minHC) red.push({icon:'👥',title:`${sid} — Low Headcount`,desc:`${hc} staff < min ${t.minHC}.`,time:s.weekOf,...meta});
+    if (t.checkManagerCoverage&&!DAYS.some(d=>dayHasMgr(d))&&members.length)
+      red.push({icon:'🎯',title:`${sid} — No Manager`,desc:'No manager assigned any shift.',time:s.weekOf,...meta});
+    if (_isStale(s)) red.push({icon:'📡',title:`${sid} — Stale`,desc:`Last push ${timeAgo(s.lastPushed)}.`,time:s.lastPushed,...meta});
+
+    const singleDays=DAYS.filter(d=>{const n=dayHC(d);return n>0&&n<=t.singleCoverage;});
+    if (t.singleCoverage>0&&singleDays.length) red.push({icon:'🧑',title:`${sid} — Single Coverage`,desc:`1 person on: ${singleDays.join(', ')}.`,time:s.weekOf,...meta});
+
+    if (util!==null&&t.warnUtilHigh>0&&util>t.warnUtilHigh&&(!t.critUtilHigh||util<=t.critUtilHigh))
+      amber.push({icon:'⚠️',title:`${sid} — Approaching Limit`,desc:`${util}% util (warn: >${t.warnUtilHigh}%).`,time:s.weekOf,...meta});
+    if (util!==null&&t.warnUtilLow>0&&util<t.warnUtilLow&&(!t.critUtilLow||util>=t.critUtilLow))
+      amber.push({icon:'📉',title:`${sid} — Under-Scheduled`,desc:`${util}% util (warn: <${t.warnUtilLow}%).`,time:s.weekOf,...meta});
+    if (t.checkWeekendCoverage){
+      const missingWk=['Sun','Sat'].filter(d=>!dayHC(d));
+      if (missingWk.length) amber.push({icon:'📅',title:`${sid} — No Weekend`,desc:`No shifts: ${missingWk.join(', ')}.`,time:s.weekOf,...meta});
+    }
+    if (t.checkMissingFinancials){
+      const miss=[];
+      if(!Number(p.forecastSales)) miss.push('Forecast Sales');
+      if(!_getBudget(s)) miss.push('Budget');
+      if(miss.length) amber.push({icon:'📋',title:`${sid} — Missing Financials`,desc:`Not entered: ${miss.join(', ')}.`,time:s.weekOf,...meta});
+    }
+    if (util!==null&&t.greenUtilLow>0&&t.greenUtilHigh>0&&util>=t.greenUtilLow&&util<=t.greenUtilHigh)
+      green.push({icon:'✅',title:`${sid} — On Target`,desc:`${util}% within ${t.greenUtilLow}–${t.greenUtilHigh}%.`,time:s.weekOf,...meta});
+    if (t.earlySubmitDays>0&&s.lastPushed&&s.weekOf){
+      const days=Math.round((new Date(s.weekOf)-new Date(s.lastPushed))/864e5);
+      if (days>=t.earlySubmitDays) green.push({icon:'🚀',title:`${sid} — Early Submit`,desc:`${days}d before week start.`,time:s.lastPushed,...meta});
+    }
+  });
+
+  const all=[
+    ...red.map(a=>({...a,type:'crit'})),
+    ...amber.map(a=>({...a,type:'warn'})),
+    ...green.map(a=>({...a,type:'ok'}))
+  ];
+
+  if (!all.length) all.push({type:'ok',icon:'✅',title:'All Clear',desc:'No flags for current selection.',time:new Date().toISOString(),dm:'—'});
+
+  // Summary badges
+  document.getElementById('alertStrip').innerHTML =
+    (red.length?`<span class="alert-count-badge" style="background:rgba(255,71,87,.12);color:var(--red);border:1px solid rgba(255,71,87,.25)">🔴 ${red.length} Critical</span>`:'') +
+    (amber.length?`<span class="alert-count-badge" style="background:rgba(245,166,35,.12);color:var(--amber);border:1px solid rgba(245,166,35,.25)">🟡 ${amber.length} Warnings</span>`:'') +
+    (green.length?`<span class="alert-count-badge" style="background:rgba(0,214,143,.12);color:var(--green);border:1px solid rgba(0,214,143,.25)">🟢 ${green.length} Green</span>`:'');
+
+  // Group by DM
+  const byDm = {};
+  const dmOrder = [];
+  all.forEach(a => {
+    const dm = a.dm || 'Unassigned DM';
+    if (!byDm[dm]) { byDm[dm] = []; dmOrder.push(dm); }
+    byDm[dm].push(a);
+  });
+  // Sort DMs: most critical first
+  dmOrder.sort((a,b) => {
+    const critA = byDm[a].filter(x=>x.type==='crit').length;
+    const critB = byDm[b].filter(x=>x.type==='crit').length;
+    return critB - critA;
+  });
+
+  const listEl = document.getElementById('alertsList');
+  listEl.innerHTML = dmOrder.map(dm => {
+    const items = byDm[dm];
+    const critCount = items.filter(x=>x.type==='crit').length;
+    const warnCount = items.filter(x=>x.type==='warn').length;
+    const summary = [
+      critCount ? `<span style="color:var(--red)">${critCount} critical</span>` : '',
+      warnCount ? `<span style="color:var(--amber)">${warnCount} warning${warnCount>1?'s':''}</span>` : ''
+    ].filter(Boolean).join(' · ');
+
+    return `<div class="alert-dm-group">
+      <div class="alert-dm-hdr">
+        📌 ${dm}${summary?`<span class="alert-dm-crit-count">(${summary})</span>`:''}
+      </div>
+      <div class="alerts-list">
+        ${items.map(a=>`<div class="alert-row ${a.type}">
+          <span class="alert-icon">${a.icon}</span>
+          <div class="alert-body">
+            <div class="alert-title">${a.title}</div>
+            <div class="alert-desc">${a.desc}</div>
+          </div>
+          <div class="alert-time">${a.time?formatDate(a.time):''}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _updateAlertBadge() {
+  const crits=S.filtered.filter(s=>_isCrit(s)||_isStale(s)).length;
+  const badge=document.getElementById('alertBadge');
+  if (!badge) return;
+  if (crits>0) { badge.textContent=crits; badge.style.display='flex'; }
+  else badge.style.display='none';
+}
+
+// ═══════════════════════════════════════════════════════
+//  STORE DETAIL — with breadcrumb + day chart (Features #5, #6)
+// ═══════════════════════════════════════════════════════
+function openDetail(storeId) {
+  const s = S.stores.find(x=>String(x.storeId)===String(storeId));
+  if (!s) {
+    // Store in directory but no schedule yet — show info-only panel
+    const gs = S.dirById[String(storeId)] || {};
+    _renderDirectoryOnlyDetail(storeId, gs);
+  } else {
+    S._detailStore = String(storeId);
+    S._detailDept  = '__all__';
+    _renderDetail(s, '__all__');
+  }
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+function _renderDirectoryOnlyDetail(storeId, gs) {
+  document.getElementById('detailTitle').textContent = `Store ${storeId} — ${_shortName(gs.name||'', 30)}`;
+  document.getElementById('detailSubtitle').textContent = [gs.city, gs.state, gs.region].filter(Boolean).join(' · ');
+  _renderDetailBreadcrumb(gs);
+  document.getElementById('detailBody').innerHTML = `
+    <div style="background:var(--amber-dim);border:1px solid rgba(245,166,35,.3);border-radius:8px;padding:14px 18px;margin-bottom:18px;font-size:.82rem;color:var(--amber)">
+      ⚠ No schedule submitted yet for this store.
+    </div>
+    ${_contactsHTML(gs)}`;
+}
+
+function _renderDetail(s, activeDept) {
+  const gs = S.dirById[String(s.storeId)] || {};
+  document.getElementById('detailTitle').textContent = `Store ${s.storeId} — ${_shortName(s.storeName, 30)}`;
+  document.getElementById('detailSubtitle').textContent =
+    [gs.city, gs.state, gs.region].filter(Boolean).join(' · ') +
+    (gs.manager ? ` · Mgr: ${gs.manager}` : '');
+  _renderDetailBreadcrumb(gs);
+
+  const depts = s.departments || [];
+  const isMulti = depts.length > 1;
+  let body = '';
+
+  // Dept tabs
+  if (isMulti) {
+    body += `<div class="dept-tabs">
+      <button class="dept-tab${activeDept==='__all__'?' active':''}" onclick="switchDept('${s.storeId}','__all__')">All Depts</button>
+      ${depts.map(d=>{const lbl=d.department||'General'; return `<button class="dept-tab${activeDept===lbl?' active':''}" onclick="switchDept('${s.storeId}','${lbl.replace(/'/g,"\\'")}')"> ${lbl}</button>`;}).join('')}
+    </div>`;
+  }
+
+  let kpiHC, kpiHrs, kpiBudget;
+  if (!isMulti || activeDept === '__all__') {
+    kpiHC = Number(s.headcount||0); kpiHrs = Number(s.totalHours||0); kpiBudget = _getBudget(s);
+  } else {
+    const dep = depts.find(d=>(d.department||'General')===activeDept) || {};
+    kpiHC = Number(dep.headcount||0); kpiHrs = Number(dep.totalHours||0); kpiBudget = Number(dep.weeklyBudget||dep.calcBudget||0);
+  }
+  const pct = kpiBudget>0?Math.round((kpiHrs/kpiBudget)*100):0;
+  const pctColor = pct>100?'var(--red)':pct>85?'var(--amber)':'var(--green)';
+
+  body += `<div class="detail-kpis">
+    <div class="detail-kpi"><div class="detail-kpi-lbl">Headcount</div><div class="detail-kpi-val" style="color:var(--accent)">${kpiHC}</div></div>
+    <div class="detail-kpi"><div class="detail-kpi-lbl">Sched Hrs</div><div class="detail-kpi-val" style="color:var(--green)">${kpiHrs}</div></div>
+    <div class="detail-kpi"><div class="detail-kpi-lbl">Budget</div><div class="detail-kpi-val">${kpiBudget||'—'}</div></div>
+    <div class="detail-kpi"><div class="detail-kpi-lbl">Utilization</div><div class="detail-kpi-val" style="color:${pctColor}">${kpiBudget?pct+'%':'—'}</div></div>
+  </div>`;
+
+  // Which depts to show
+  let viewDepts;
+  if (!isMulti || activeDept==='__all__') {
+    viewDepts = depts.length ? depts : [{payload:s.payload,department:''}];
+  } else {
+    viewDepts = depts.filter(d=>(d.department||'General')===activeDept);
+    if (!viewDepts.length) viewDepts = [{payload:s.payload,department:''}];
+  }
+  const view = _mergeDeptsForView(viewDepts, isMulti);
+
+  // ── Hours by day mini bar chart (Feature #5)
+  const dayHrsData = DAYS.map(d => {
+    return view.members.reduce((sum, m) => {
+      return sum + _billable(view.schedule[d]?.[m], view.noCount) * view.slotHours;
+    }, 0);
+  });
+  const maxDayHrs = Math.max(...dayHrsData, 1);
+  body += `<div class="day-chart-wrap">
+    <div class="day-chart-title">Hours by Day</div>
+    <div class="day-chart-bars">
+      ${DAYS.map((d,i) => {
+        const h = dayHrsData[i];
+        const heightPct = Math.round((h/maxDayHrs)*100);
+        const barColor = h===0?'var(--bg5)':h===Math.max(...dayHrsData)?'var(--accent)':'rgba(74,158,255,.6)';
+        return `<div class="day-bar-col">
+          <div class="day-bar-val">${h>0?h.toFixed(1):''}</div>
+          <div class="day-bar-outer">
+            <div class="day-bar-fill" style="height:${heightPct}%;background:${barColor}"></div>
+          </div>
+          <div class="day-bar-label">${d}</div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+
+  // Schedule grid (chip view)
+  body += `<div style="font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Weekly Schedule</div>
+    <div class="sched-grid">`;
+  DAYS.forEach(d => {
+    body += `<div class="sched-col"><div class="sched-col-hdr">${d}</div><div class="sched-col-body">`;
+    view.members.forEach(m => {
+      const slots = Object.keys(view.schedule[d]?.[m]||{}).length;
+      if (slots > 0) body += `<div class="shift-chip" title="${m}">${m.split(' ').pop().trim().split(']').pop().trim().split(' ')[0]} · ${(slots*view.slotHours).toFixed(1)}h</div>`;
+    });
+    body += `</div></div>`;
+  });
+  body += `</div>`;
+
+  // Roster table
+  body += `<div style="font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin:16px 0 8px">Roster</div>
+    <div class="roster-wrap" style="overflow-x:auto"><table class="roster-table">
+      <thead><tr>
+        <th>Name</th><th>Title</th><th>Role</th>
+        ${DAYS.map(d=>`<th style="text-align:center">${d}</th>`).join('')}
+        <th>Total</th>
+      </tr></thead><tbody>`;
+
+  view.members.forEach(m => {
+    const dayHrs = DAYS.map(d => {
+      const n = _billable(view.schedule[d]?.[m], view.noCount);
+      return n>0?(n*view.slotHours).toFixed(1):'—';
+    });
+    const total = DAYS.reduce((a,d)=>a+_billable(view.schedule[d]?.[m],view.noCount),0);
+    const displayName = m.replace(/^\[.*?\]\s*/,'');
+    const deptTag = isMulti&&m.startsWith('[')?`<span style="font-size:.6rem;opacity:.5;margin-left:3px">${(m.match(/^\[(.*?)\]/)||[])[1]||''}</span>`:'';
+    body += `<tr>
+      <td><strong>${displayName}</strong>${deptTag}</td>
+      <td style="color:var(--text2)">${view.titles[m]||'—'}</td>
+      <td>${view.managers[m]?`<span class="status-pill sp-blue">Mgr</span>`:'—'}</td>
+      ${dayHrs.map(h=>`<td style="text-align:center;font-family:var(--mono);font-size:.7rem;color:${h==='—'?'var(--text3)':'var(--accent)'}">${h}</td>`).join('')}
+      <td style="font-family:var(--mono);font-weight:600;color:var(--green)">${(total*view.slotHours).toFixed(1)}</td>
+    </tr>`;
+  });
+  body += `</tbody></table></div>`;
+
+  body += _contactsHTML(gs);
+
+  document.getElementById('detailBody').innerHTML = body;
+}
+
+// ── Org breadcrumb (Feature #6)
+function _renderDetailBreadcrumb(gs) {
+  const el = document.getElementById('detailBreadcrumb');
+  if (!el) return;
+  const parts = [gs.rvp, gs.gm, gs.dm].filter(Boolean);
+  if (!parts.length) { el.innerHTML = ''; return; }
+  el.innerHTML = parts.map((p,i) => {
+    const labels = ['RVP', 'GM', 'DM'];
+    return `<span style="color:var(--text3);font-size:.6rem">${labels[i]}</span> <span>${p}</span>`;
+  }).join(`<span class="sep"> › </span>`);
+}
+
+function _contactsHTML(gs) {
+  if (!gs.manager && !gs.dm) return '';
+  const contacts = [
+    { label:'Store Manager', name:gs.manager, email:gs.managerEmail, phone:gs.phone },
+    { label:'District Manager', name:gs.dm, email:gs.dmEmail },
+    { label:'General Manager', name:gs.gm, email:gs.gmEmail },
+    { label:'RVP', name:gs.rvp, email:gs.rvpEmail }
+  ];
+  return `<div style="font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin:16px 0 8px">Contacts</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
+      ${contacts.map(c => `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:4px">${c.label}</div>
+        <div style="font-size:.82rem;font-weight:600">${c.name||'—'}</div>
+        ${c.email?`<div style="font-size:.68rem;margin-top:2px"><a href="mailto:${c.email}" style="color:var(--accent)">${c.email}</a></div>`:''}
+        ${c.phone?`<div style="font-size:.68rem;color:var(--text2);margin-top:2px">${c.phone}</div>`:''}
+      </div>`).join('')}
+    </div>`;
+}
+
+function switchDept(storeId, dept) {
+  const s = S.stores.find(x=>x.storeId===storeId);
+  if (!s) return;
+  S._detailDept = dept;
+  _renderDetail(s, dept);
+}
+function closeDetail() {
+  document.getElementById('detailOverlay').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════
+//  DOWNLOAD / SEND TO SCHEDULER
+// ═══════════════════════════════════════════════════════
+function downloadJson() {
+  const s = S.stores.find(x=>x.storeId===S._detailStore);
+  if (!s) return;
+  const data = s.departments?.length>1 ? {storeId:s.storeId,storeName:s.storeName,departments:s.departments} : s.payload;
+  if (!data) return;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download=`Store${s.storeId}_${s.weekOf||'schedule'}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+async function sendToScheduler() {
+  const s = S.stores.find(x=>x.storeId===S._detailStore);
+  if (!s) return;
+  let payload = s.payload;
+  if (s.departments?.length>1) {
+    const names = s.departments.map(d=>d.department||'General');
+    const choice = await _pickDialog('Choose Department', names);
+    if (choice===null) return;
+    payload = s.departments.find(d=>(d.department||'General')===choice)?.payload || s.payload;
+  }
+  if (!payload) return;
+  const btn=document.getElementById('btnSendScheduler');
+  const orig=btn.textContent; btn.textContent='⏳ Sending…'; btn.disabled=true;
+  try {
+    const res=await fetch(S.apiUrl,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'pushHandoff',storeId:S._detailStore,pushedBy:'HQ Dashboard',payload})});
+    const data=await res.json();
+    if (data.ok) {
+      btn.textContent='✅ Sent!';
+      (top||window).open('https://sites.google.com/partsauthority.com/scheduler/home','_blank');
+      setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},3000);
+    } else throw new Error(data.error||'Unknown error');
+  } catch(e) { toast('Failed: '+e.message,'error'); btn.textContent=orig; btn.disabled=false; }
+}
+
+// ═══════════════════════════════════════════════════════
+//  EXPORT CSV
+// ═══════════════════════════════════════════════════════
+function exportCSV() {
+  const rows = [['Store ID','Store Name','Region','Area','DM','GM','RVP','Week Of','Headcount','Sched Hrs','Budget Hrs','Util%','Last Pushed','Status']];
+  S.filtered.forEach(s => {
+    const gs  = S.dirById[String(s.storeId)] || {};
+    const hrs = Number(s.totalHours||0);
+    const bgt = _getBudget(s);
+    const pct = bgt>0?Math.round((hrs/bgt)*100):0;
+    const status = _isCrit(s)?'Critical':_isStale(s)?'Stale':_isOver(s)?'Over':_isUnder(s)?'Under':'OK';
+    rows.push([s.storeId,s.storeName||'',s.region||gs.region||'',s.area||gs.area||'',gs.dm||'',gs.gm||'',gs.rvp||'',s.weekOf||'',s.headcount||0,hrs,bgt,pct,s.lastPushed||'',status]);
+  });
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`hq_schedule_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ═══════════════════════════════════════════════════════
+//  VIEW SWITCHING
+// ═══════════════════════════════════════════════════════
+function showPane(id) {
+  document.querySelectorAll('.pane').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById(`pane-${id}`)?.classList.add('active');
+  document.getElementById(`nav-${id}`)?.classList.add('active');
+  S.currentPane = id;
+  if (id==='trends')    renderCharts();
+  if (id==='directory') renderDirectory();
+  if (id==='roster')    renderRoster();
+  if (id==='alerts')    renderAlerts();
+  if (id==='settings') {
+    const el=document.getElementById('settingsUrl'); if(el&&!el.value) el.value=S.apiUrl||HQ_URL;
+    _loadThresholdInputs();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════════════
+function saveSettings() {
+  const url=document.getElementById('settingsUrl')?.value.trim();
+  if (!url) { toast('Enter a URL','warn'); return; }
+  localStorage.setItem('hqDashboardUrl',url);
+  S.apiUrl=url;
+  toast('✅ Saved — reloading','ok');
+  loadData();
+}
+async function testConnection() {
+  try {
+    const url=document.getElementById('settingsUrl')?.value.trim();
+    const res=await fetch(`${url}?action=ping&_=${Date.now()}`);
+    const d=await res.json();
+    if (d.ok) toast('✅ '+d.message,'ok'); else toast('❌ '+d.error,'error');
+  } catch(e) { toast('❌ '+e.message,'error'); }
+}
+
+function saveThresholds() {
+  const n=id=>{const v=Number(document.getElementById(id)?.value);return isNaN(v)?0:v;};
+  const c=id=>document.getElementById(id)?.checked||false;
+  S.thresholds={
+    ...S.thresholds,
+    minHours:n('cfgMinHours'), maxHours:n('cfgMaxHours'),
+    warnUtilHigh:n('cfgWarnUtilHigh'), critUtilHigh:n('cfgCritUtilHigh'),
+    warnUtilLow:n('cfgWarnUtilLow'),   critUtilLow:n('cfgCritUtilLow'),
+    minHC:n('cfgMinHC'), staleDays:n('cfgStaleDays'),
+    deadlineDay:n('cfgDeadlineDay'),
+    checkManagerCoverage:c('cfgCheckMgr'), checkWeekendCoverage:c('cfgCheckWeekend'),
+    checkMissingFinancials:c('cfgCheckFinancials'),
+  };
+  localStorage.setItem('hqThresholds',JSON.stringify(S.thresholds));
+  if (S.user?.email&&S.apiUrl) {
+    fetch(S.apiUrl,{method:'POST',body:JSON.stringify({action:'saveThresholds',email:S.user.email,thresholds:S.thresholds})}).catch(()=>{});
+  }
+  toast('✅ Thresholds saved','ok');
+  render();
+}
+
+function _loadThresholdInputs() {
+  const t=S.thresholds;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el){if(el.type==='checkbox')el.checked=!!v;else el.value=v||'';}};
+  set('cfgMinHours',t.minHours); set('cfgMaxHours',t.maxHours);
+  set('cfgWarnUtilHigh',t.warnUtilHigh); set('cfgCritUtilHigh',t.critUtilHigh);
+  set('cfgWarnUtilLow',t.warnUtilLow);   set('cfgCritUtilLow',t.critUtilLow);
+  set('cfgMinHC',t.minHC); set('cfgStaleDays',t.staleDays);
+  set('cfgDeadlineDay',t.deadlineDay??4);
+  set('cfgCheckMgr',t.checkManagerCoverage);
+  set('cfgCheckWeekend',t.checkWeekendCoverage);
+  set('cfgCheckFinancials',t.checkMissingFinancials);
+}
+
+// ═══════════════════════════════════════════════════════
+//  SAVE DEFAULT VIEW
+// ═══════════════════════════════════════════════════════
+async function saveDefaultView() {
+  if (!S.user?.email) { toast('Sign in to save views','warn'); return; }
+  const prefs = {
+    currentView:  S.currentPane,
+    filterRegion: document.getElementById('filterRegion')?.value||'',
+    filterArea:   document.getElementById('filterArea')?.value  ||'',
+    filterRvp:    document.getElementById('filterRvp')?.value   ||'',
+    filterGm:     document.getElementById('filterGm')?.value    ||'',
+    filterDm:     document.getElementById('filterDm')?.value    ||'',
+    filterWeek:   document.getElementById('filterWeek')?.value  ||'',
+    filterStore:  document.getElementById('filterStore')?.value ||'',
+  };
+  try {
+    const [pr,tr]=await Promise.all([
+      fetch(S.apiUrl,{method:'POST',body:JSON.stringify({action:'saveUserPrefs',email:S.user.email,prefs})}),
+      fetch(S.apiUrl,{method:'POST',body:JSON.stringify({action:'saveThresholds',email:S.user.email,thresholds:S.thresholds})})
+    ]);
+    const pd=await pr.json(), td=await tr.json();
+    if (pd.ok&&td.ok) toast('⭐ View + thresholds saved','ok');
+    else toast('⚠ Partial save','warn');
+  } catch(e) { toast('❌ Save failed','error'); }
+}
+
+function _applyPrefs(prefs) {
+  if (!prefs) return;
+  if (prefs.currentView) showPane(prefs.currentView);
+  const setF=(id,v)=>{ const el=document.getElementById(id); if(el&&v!==undefined) el.value=v; };
+  setF('filterRegion',prefs.filterRegion);
+  if (prefs.filterRegion) onRegionChange();
+  setF('filterArea',prefs.filterArea);
+  setF('filterRvp',prefs.filterRvp);
+  if (prefs.filterRvp) { _rebuildGmDropdown(); _rebuildDmDropdown(); }
+  setF('filterGm',prefs.filterGm);
+  if (prefs.filterGm) _rebuildDmDropdown();
+  setF('filterDm',prefs.filterDm);
+  setF('filterWeek',prefs.filterWeek);
+  setF('filterStore',prefs.filterStore);
+  applyFilters();
+}
+
+async function _silentLoadUserSettings(email) {
+  if (!email||!S.apiUrl) return;
+  try {
+    const [tr,pr]=await Promise.all([
+      fetch(`${S.apiUrl}?action=getThresholds&email=${encodeURIComponent(email)}&_=${Date.now()}`),
+      fetch(`${S.apiUrl}?action=getUserPrefs&email=${encodeURIComponent(email)}&_=${Date.now()}`)
+    ]);
+    const td=await tr.json(), pd=await pr.json();
+    if (td.ok&&td.thresholds) S.thresholds=Object.assign({},S.thresholds,td.thresholds);
+    if (pd.ok&&pd.prefs) _applyPrefs(pd.prefs);
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════
+//  HELPER UTILITIES
+// ═══════════════════════════════════════════════════════
+function _getBudget(s) {
+  const p = s.payload || {};
+  const direct = Number(s.weeklyBudget || s.budget || 0);
+  if (direct > 0) return direct;
+  const calc = (Number(p.forecastSales||0) * Number(p.payrollPct||0)) / 100;
+  return Math.round(calc);
+}
+function _isStale(s) {
+  if (!s.lastPushed) return false;
+  const staleDays = Number(S.thresholds.staleDays || 10);
+  return (Date.now() - new Date(s.lastPushed)) > staleDays * 864e5;
+}
+function _isOver(s) {
+  const b=_getBudget(s); if (!b) return false;
+  const u=Math.round((Number(s.totalHours||0)/b)*100);
+  return u > (S.thresholds.critUtilHigh||100);
+}
+function _isUnder(s) {
+  const b=_getBudget(s); if (!b) return false;
+  const u=Math.round((Number(s.totalHours||0)/b)*100);
+  return u < (S.thresholds.critUtilLow||60);
+}
+function _isCrit(s) { return _isOver(s) || _isUnder(s) || (Number(s.totalHours||0)===0 && s.lastPushed); }
+function _groupBy(arr, key) {
+  const fn = typeof key === 'function' ? key : x => x[key];
+  return arr.reduce((m,x)=>{ const k=fn(x)||''; (m[k]=m[k]||[]).push(x); return m; }, {});
+}
+function _shortName(n, max=25) {
+  if (!n) return '';
+  const clean = n.replace(/^[A-Z]{2}\s*-\s*/,'');
+  return clean.length > max ? clean.slice(0,max)+'…' : clean;
+}
+function _noCountSet(codes) { return new Set(codes.filter(c=>c.countHours===false).map(c=>c.key)); }
+function _slotHours(schedule) {
+  const mins={};
+  Object.values(schedule).forEach(dm=>{if(!dm)return;Object.values(dm).forEach(sm=>{if(!sm||typeof sm!=='object')return;Object.keys(sm).forEach(t=>{const p=t.split(':');if(p.length===2)mins[parseInt(p[1])]=true;});});});
+  const u=Object.keys(mins).map(Number).sort((a,b)=>a-b);
+  if(u.length>=2){let g=60;for(let i=1;i<u.length;i++){const d=u[i]-u[i-1];if(d>0&&d<g)g=d;}return g/60;}
+  return u.length===1?0.25:0.5;
+}
+function _billable(slotMap, noCount) {
+  if (!slotMap||typeof slotMap!=='object'||Array.isArray(slotMap)) return 0;
+  return Object.values(slotMap).filter(c=>!noCount.has(c)).length;
+}
+function _mergeDeptsForView(viewDepts, isMulti) {
+  const members=[], titles={}, managers={}, noCount=new Set(), schedMerged={};
+  let sh=0.25;
+  viewDepts.forEach(dep => {
+    const p = dep.payload || {};
+    sh = _slotHours(p.schedule||{}) || sh;
+    const nc = _noCountSet(p.codes||[]);
+    nc.forEach(c=>noCount.add(c));
+    (p.teamMembers||[]).forEach(m => {
+      const key = isMulti&&dep.department ? `[${dep.department}] ${m}` : m;
+      if (!members.includes(key)) members.push(key);
+      titles[key]   = p.titles?.[m]||'';
+      managers[key] = p.managers?.[m]||false;
+      DAYS.forEach(d => {
+        if (!schedMerged[d]) schedMerged[d]={};
+        if (p.schedule?.[d]?.[m]) schedMerged[d][key] = p.schedule[d][m];
+      });
+    });
+  });
+  return { members, titles, managers, noCount, schedule: schedMerged, slotHours: sh };
+}
+function getCurrentWeekSunday() {
+  const d=new Date(); d.setDate(d.getDate()-d.getDay());
+  return d.toISOString().slice(0,10);
+}
+function timeAgo(iso) {
+  if (!iso) return '';
+  const diff=(Date.now()-new Date(iso))/1000;
+  if(diff<60) return 'just now';
+  if(diff<3600) return `${Math.floor(diff/60)}m ago`;
+  if(diff<86400) return `${Math.floor(diff/3600)}h ago`;
+  return `${Math.floor(diff/86400)}d ago`;
+}
+function formatDate(iso) {
+  if (!iso) return '';
+  try { return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric'}); } catch(e) { return ''; }
+}
+function toast(msg, type='') {
+  const el=document.getElementById('toast');
+  if (!el) return;
+  el.textContent=msg; el.className='toast show'+(type?' '+type:'');
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.classList.remove('show'),3000);
+}
+async function _pickDialog(title, options) {
+  return new Promise(resolve => {
+    const backdrop=document.createElement('div');
+    backdrop.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';
+    const box=document.createElement('div');
+    box.style.cssText='background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:20px;min-width:260px';
+    box.innerHTML=`<div style="font-size:.85rem;font-weight:600;margin-bottom:12px">${title}</div>`;
+    options.forEach(opt=>{
+      const btn=document.createElement('button');
+      btn.textContent=opt; btn.className='tb-btn'; btn.style.cssText='display:block;width:100%;margin-bottom:6px;text-align:left';
+      btn.onclick=()=>{document.body.removeChild(backdrop);resolve(opt);};
+      box.appendChild(btn);
+    });
+    const cancel=document.createElement('button'); cancel.textContent='Cancel'; cancel.className='tb-btn';
+    cancel.style.cssText='display:block;width:100%;margin-top:4px;text-align:center;color:var(--text3)';
+    cancel.onclick=()=>{document.body.removeChild(backdrop);resolve(null);};
+    box.appendChild(cancel);
+    backdrop.appendChild(box); document.body.appendChild(backdrop);
+  });
+}
+</script>
+</body>
+</html>
